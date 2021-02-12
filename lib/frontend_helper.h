@@ -324,6 +324,22 @@ void pickle_printer_to_file(PrinterObj *p, const char *filename , const Frontend
  * NULL otherwise
  */
 PrinterObj *resurrect_printer_from_file(const char *filename);
+
+/**
+ * Finds the human readable English name of the setting.
+ *
+ * @param option_name : name of the setting
+ */
+char *get_human_readable_option_name(PrinterObj *p, char *option_name);
+
+/**
+ * Finds the human readable English name of the choice for the given setting.
+ *
+ * @param option_name : name of the setting
+ * @param choice_name : value of the choice
+ */
+char *get_human_readable_choice_name(PrinterObj *p, char *option_name, char *choice_name);
+
 /************************************************************************************************/
 /**
 ______________________________________ Settings __________________________________________

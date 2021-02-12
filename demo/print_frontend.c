@@ -251,6 +251,25 @@ gpointer parse_commands(gpointer user_data)
             PrinterObj *p = find_PrinterObj(f, printer_id, backend_name);
             pickle_printer_to_file(p, "/tmp/.printer-pickle", f);
         }
+        else if (strcmp(buf, "get-human-readable-option-name") == 0)
+        {
+            char printer_id[100];
+            char backend_name[100];
+            char option_name[100];
+            scanf("%s%s%s", printer_id, backend_name, option_name);
+            PrinterObj *p = find_PrinterObj(f, printer_id, backend_name);
+            printf("%s\n", get_human_readable_option_name(p, option_name));
+        }
+        else if (strcmp(buf, "get-human-readable-choice-name") == 0)
+        {
+            char printer_id[100];
+            char backend_name[100];
+            char option_name[100];
+            char choice_name[100];
+            scanf("%s%s%s%s", printer_id, backend_name, option_name, choice_name);
+            PrinterObj *p = find_PrinterObj(f, printer_id, backend_name);
+            printf("%s\n", get_human_readable_choice_name(p, option_name, choice_name));
+        }
     }
 }
 
@@ -278,6 +297,8 @@ void display_help()
     printf("%s\n", "get-current <option name> <printer id> <backend name>");
     printf("%s\n", "add-setting <option name> <option value> <printer id> <backend name>");
     printf("%s\n", "clear-setting <option name> <printer id> <backend name>");
+    printf("%s\n", "get-human-readable-option-name <printer id> <backend name> <option name>");
+    printf("%s\n", "get-human-readable-choice-name <printer id> <backend name> <option name> <choice name>");
 
     printf("pickle-printer <printer id> <backend name>\n");
 }

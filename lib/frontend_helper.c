@@ -612,6 +612,34 @@ PrinterObj *resurrect_printer_from_file(const char *filename)
     return p;
 }
 
+char *get_human_readable_option_name(PrinterObj *p, char *option_name)
+{
+    char *human_readable_name;
+    GError *error = NULL;
+    print_backend_call_get_human_readable_option_name_sync(p->backend_proxy, option_name,
+                                                           &human_readable_name, NULL, &error);
+    if(error) {
+        DBG_LOG("Error getting human readable option name", ERR);
+        return option_name;
+    } else {
+        return human_readable_name;
+    }
+}
+
+char *get_human_readable_choice_name(PrinterObj *p, char *option_name, char* choice_name)
+{
+    char *human_readable_name;
+    GError *error = NULL;
+    print_backend_call_get_human_readable_choice_name_sync(p->backend_proxy, option_name, choice_name,
+                                                           &human_readable_name, NULL, &error);
+    if(error) {
+        DBG_LOG("Error getting human readable choice name", ERR);
+        return choice_name;
+    } else {
+        return human_readable_name;
+    }
+}
+
 /**
 ________________________________________________ Settings __________________________________________
 **/

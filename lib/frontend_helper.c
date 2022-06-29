@@ -24,7 +24,7 @@ static void on_printer_added(GDBusConnection *connection,
     }
     fill_basic_options(p, parameters);
     add_printer(f, p);
-    f->add_cb(p);
+    f->add_cb(f, p);
 }
 
 static void on_printer_removed(GDBusConnection *connection,
@@ -40,7 +40,7 @@ static void on_printer_removed(GDBusConnection *connection,
     char *backend_name;
     g_variant_get(parameters, "(ss)", &printer_id, &backend_name);
     PrinterObj *p = remove_printer(f, printer_id, backend_name);
-    f->rem_cb(p);
+    f->rem_cb(f, p);
 }
 
 static void

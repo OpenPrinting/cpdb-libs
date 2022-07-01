@@ -34,6 +34,11 @@
             <arg name="choice_name" direction="in" type="s"/>
             <arg name="human_readable_name" direction="out" type="s"/>
         </method>
+        <method name="getMediaSize">
+            <arg name="media" direction="in" type="s"/>
+            <arg name="dimensions" direction="out" type="(ii)"/>
+            <!-- dimension contents: width, length -->
+        </method>
         <method name="isAcceptingJobs">
             <arg name="printer_id" direction="in" type="s"/>
             <arg name="is_accepting" direction="out" type="b"/>

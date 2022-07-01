@@ -340,6 +340,15 @@ char *get_human_readable_option_name(PrinterObj *p, char *option_name);
  */
 char *get_human_readable_choice_name(PrinterObj *p, char *option_name, char *choice_name);
 
+/**
+ * Finds the dimension for a given media-size
+ *
+ * @param media : name of media-size
+ * @param width : address of width of media-size to be returned
+ * @param length : address of length of media-size to be returned
+ */
+void get_media_size(PrinterObj *p, const char *media, int *width, int *length);
+
 /************************************************************************************************/
 /**
 ______________________________________ Settings __________________________________________

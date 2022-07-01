@@ -640,6 +640,15 @@ char *get_human_readable_choice_name(PrinterObj *p, char *option_name, char* cho
     }
 }
 
+void get_media_size(PrinterObj *p, const char *media_size, int *width, int *length)
+{
+    GError *error = NULL;
+    GVariant *var;
+    print_backend_call_get_media_size_sync(p->backend_proxy, media_size,
+                                            &var, NULL, &error);
+    g_variant_get(var, "(ii)", width, length);
+}
+
 /**
 ________________________________________________ Settings __________________________________________
 **/

@@ -270,6 +270,17 @@ gpointer parse_commands(gpointer user_data)
             PrinterObj *p = find_PrinterObj(f, printer_id, backend_name);
             printf("%s\n", get_human_readable_choice_name(p, option_name, choice_name));
         }
+        else if (strcmp(buf, "get-media-size") == 0)
+        {
+            char printer_id[100];
+            char backend_name[100];
+            char media[100];
+            int width, length;
+            scanf("%s%s%s", media, printer_id, backend_name);
+            PrinterObj *p = find_PrinterObj(f, printer_id, backend_name);
+            get_media_size(p, media, &width, &length);
+            printf("%dx%d\n", width, length);
+        }
     }
 }
 
@@ -299,6 +310,7 @@ void display_help()
     printf("%s\n", "clear-setting <option name> <printer id> <backend name>");
     printf("%s\n", "get-human-readable-option-name <printer id> <backend name> <option name>");
     printf("%s\n", "get-human-readable-choice-name <printer id> <backend name> <option name> <choice name>");
+    printf("%s\n", "get-media-size <media> <printer id> <backend name>");
 
     printf("pickle-printer <printer id> <backend name>\n");
 }

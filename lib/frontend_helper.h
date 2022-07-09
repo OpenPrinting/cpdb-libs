@@ -469,7 +469,7 @@ void unpack_job_array(GVariant *var, int num_jobs, Job *jobs, char *backend_name
  * ________________________________utility functions__________________________
  */
 
-void DBG_LOG(const char *msg, int msg_level);
+void DBG_LOG(const char *msg, const char *error, int msg_level);
 char *concat(char *printer_id, char *backend_name);
 /**
  * 'Unpack' (Deserialize) the GVariant returned in get_all_options

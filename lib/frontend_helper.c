@@ -48,7 +48,7 @@ on_name_acquired(GDBusConnection *connection,
                  const gchar *name,
                  gpointer user_data)
 {
-    DBG_LOG("Acquired bus name", INFO);
+    DBG_LOG("Acquired bus name", "", INFO);
     FrontendObj *f = (FrontendObj *)user_data;
     f->connection = connection;
     GError *error = NULL;
@@ -78,7 +78,7 @@ on_name_acquired(GDBusConnection *connection,
     g_dbus_interface_skeleton_export(G_DBUS_INTERFACE_SKELETON(f->skeleton), connection, DIALOG_OBJ_PATH, &error);
     if (error)
     {
-        DBG_LOG("Error connecting to D-Bus.", ERR);
+        DBG_LOG("Error connecting to D-Bus.", error->message, ERR);
         return;
     }
     activate_backends(f);
@@ -145,7 +145,7 @@ void activate_backends(FrontendObj *f)
 
 		char *msg = malloc(sizeof(char) * (strlen(backend_suffix) + 20));
 		sprintf(msg, "Found backend %s", backend_suffix);
-                DBG_LOG(msg, INFO);
+                DBG_LOG(msg, "", INFO);
 		free(msg);
 
                 proxy = create_backend_from_file(dir->d_name);
@@ -182,7 +182,7 @@ PrintBackend *create_backend_from_file(const char *backend_file_name)
     {
         char *msg = malloc(sizeof(char) * (strlen(backend_name) + 40));
         sprintf(msg, "Error creating backend proxy for %s", backend_name);
-        DBG_LOG(msg, ERR);
+        DBG_LOG(msg, error->message, ERR);
 	free(msg);
     }
     return proxy;
@@ -190,7 +190,7 @@ PrintBackend *create_backend_from_file(const char *backend_file_name)
 
 void ignore_last_saved_settings(FrontendObj *f)
 {
-    DBG_LOG("Ignoring previous settings", INFO);
+    DBG_LOG("Ignoring previous settings", "", INFO);
     Settings *s = f->last_saved_settings;
     f->last_saved_settings = NULL;
     delete_Settings(s);
@@ -204,7 +204,7 @@ gboolean add_printer(FrontendObj *f, PrinterObj *p)
     {
         char *msg = malloc(sizeof(char) * (strlen(p->backend_name) + 60));
         sprintf(msg, "Can't add printer. Backend %s doesn't exist", p->backend_name);
-        DBG_LOG(msg, ERR);
+        DBG_LOG(msg, "", ERR);
 	free(msg);
     }
 
@@ -259,7 +259,7 @@ PrinterObj *find_PrinterObj(FrontendObj *f, char *printer_id, char *backend_name
     PrinterObj *p = g_hash_table_lookup(f->printer, hashtable_key);
     if (p == NULL)
     {
-        DBG_LOG("Printer doesn't exist.\n", ERR);
+        DBG_LOG("Printer doesn't exist.\n", "", ERR);
     }
     free(hashtable_key);
     return p;
@@ -391,7 +391,7 @@ gboolean is_accepting_jobs(PrinterObj *p)
     print_backend_call_is_accepting_jobs_sync(p->backend_proxy, p->id,
                                               &p->is_accepting_jobs, NULL, &error);
     if (error)
-        DBG_LOG("Error retrieving accepting_jobs.", ERR);
+        DBG_LOG("Error retrieving accepting_jobs.", error->message, ERR);
 
     return p->is_accepting_jobs;
 }
@@ -402,7 +402,7 @@ char *get_state(PrinterObj *p)
     print_backend_call_get_printer_state_sync(p->backend_proxy, p->id, &p->state, NULL, &error);
 
     if (error)
-        DBG_LOG("Error retrieving printer state.", ERR);
+        DBG_LOG("Error retrieving printer state.", error->message, ERR);
 
     return p->state;
 }
@@ -422,8 +422,16 @@ Options *get_all_options(PrinterObj *p)
     GVariant *var;
     print_backend_call_get_all_options_sync(p->backend_proxy, p->id,
                                             &num_options, &var, NULL, &error);
-    unpack_options(var, num_options, p->options);
-    return p->options;
+    if (!error)
+    {
+        unpack_options(var, num_options, p->options);
+        return p->options;
+    }
+    else 
+    {
+        DBG_LOG("Error retrieving printer options", error->message, ERR);
+        return NULL;
+    }
 }
 
 Option *get_Option(PrinterObj *p, char *name)
@@ -475,9 +483,9 @@ char *print_file(PrinterObj *p, char *file_path)
                                        &jobid, NULL, NULL);
     free(absolute_file_path);
     if (jobid && jobid[0] != '0')
-        DBG_LOG("File printed successfully.\n", INFO);
+        DBG_LOG("File printed successfully.\n", "", INFO);
     else
-        DBG_LOG("Error printing file.\n", ERR);
+        DBG_LOG("Error printing file.\n", "", ERR);
 
     save_to_disk(p->settings);
     return jobid;
@@ -495,9 +503,9 @@ char *print_file_path(PrinterObj *p, char *file_path, char *final_file_path)
     free(absolute_file_path);
     free(absolute_final_file_path);
     if (result)
-        DBG_LOG("File printed successfully.\n", INFO);
+        DBG_LOG("File printed successfully.\n", "", INFO);
     else
-        DBG_LOG("Error printing file.\n", ERR);
+        DBG_LOG("Error printing file.\n", "", ERR);
 
     return result;
 }
@@ -619,7 +627,7 @@ char *get_human_readable_option_name(PrinterObj *p, char *option_name)
     print_backend_call_get_human_readable_option_name_sync(p->backend_proxy, option_name,
                                                            &human_readable_name, NULL, &error);
     if(error) {
-        DBG_LOG("Error getting human readable option name", ERR);
+        DBG_LOG("Error getting human readable option name", error->message, ERR);
         return option_name;
     } else {
         return human_readable_name;
@@ -633,7 +641,7 @@ char *get_human_readable_choice_name(PrinterObj *p, char *option_name, char* cho
     print_backend_call_get_human_readable_choice_name_sync(p->backend_proxy, option_name, choice_name,
                                                            &human_readable_name, NULL, &error);
     if(error) {
-        DBG_LOG("Error getting human readable choice name", ERR);
+        DBG_LOG("Error getting human readable choice name", error->message, ERR);
         return choice_name;
     } else {
         return human_readable_name;
@@ -646,7 +654,12 @@ void get_media_size(PrinterObj *p, const char *media_size, int *width, int *leng
     GVariant *var;
     print_backend_call_get_media_size_sync(p->backend_proxy, media_size,
                                             &var, NULL, &error);
-    g_variant_get(var, "(ii)", width, length);
+    if (!error)
+        g_variant_get(var, "(ii)", width, length);
+    else 
+    {
+        DBG_LOG("Error getting media size", error->message, ERR);
+    }
 }
 
 /**
@@ -749,7 +762,7 @@ Settings *read_settings_from_disk()
     FILE *fp = fopen(path, "r");
     if (fp == NULL)
     {
-        DBG_LOG("No previous settings found.", WARN);
+        DBG_LOG("No previous settings found.", "", WARN);
         return NULL;
     }
     Settings *s = get_new_Settings();
@@ -836,11 +849,12 @@ void unpack_job_array(GVariant *var, int num_jobs, Job *jobs, char *backend_name
  * ________________________________utility functions__________________________
  */
 
-void DBG_LOG(const char *msg, int msg_level)
+void DBG_LOG(const char *msg, const char *error, int msg_level)
 {
     if (DEBUG_LEVEL >= msg_level)
     {
-        printf("%s\n", msg);
+        if (strlen(error) == 0) printf("%s\n", msg);
+        else printf("%s: %s\n", msg, error);
         fflush(stdout);
     }
 }

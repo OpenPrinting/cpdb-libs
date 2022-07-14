@@ -9,13 +9,13 @@ void display_help();
 gpointer parse_commands(gpointer user_data);
 FrontendObj *f;
 
-static int add_printer_callback(FrontendObj *f, PrinterObj *p)
+static int add_printer_callback(PrinterObj *p)
 {
     //printf("print_frontend.c : Printer %s added!\n", p->name);
     print_basic_options(p);
 }
 
-static int remove_printer_callback(FrontendObj *f, PrinterObj *p)
+static int remove_printer_callback(PrinterObj *p)
 {
     g_message("Removed Printer %s : %s!\n", p->name, p->backend_name);
 }

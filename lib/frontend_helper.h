@@ -34,7 +34,7 @@ typedef struct _Options Options;
 typedef struct _Option Option;
 typedef struct _Job Job;
 
-typedef int (*event_callback)(FrontendObj *, PrinterObj *);
+typedef int (*event_callback)(PrinterObj *);
 /*********************definitions ***************************/
 
 /**

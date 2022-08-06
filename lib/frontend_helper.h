@@ -29,12 +29,22 @@ extern "C" {
 
 typedef struct _FrontendObj FrontendObj;
 typedef struct _PrinterObj PrinterObj;
+typedef struct _AsyncObj AsyncObj;
 typedef struct _Settings Settings;
 typedef struct _Options Options;
 typedef struct _Option Option;
 typedef struct _Job Job;
 
 typedef int (*event_callback)(PrinterObj *);
+
+/**
+ * Callback for async functions
+ * 
+ * @param int 		: success
+ * @param void * 	: user_data
+ */
+typedef void (*async_callback)(PrinterObj *, int, void *);
+
 /*********************definitions ***************************/
 
 /**
@@ -348,6 +358,20 @@ char *get_human_readable_choice_name(PrinterObj *p, char *option_name, char *cho
  * @param length : address of length of media-size to be returned
  */
 void get_media_size(PrinterObj *p, const char *media, int *width, int *length);
+
+
+struct _AsyncObj {
+	PrinterObj *p;
+	async_callback caller_cb;
+	void *user_data;
+};
+
+/**
+ * Asynchronously acquires printer details
+ * 
+ * @param caller_cb : callback function
+ */
+void acquire_details(PrinterObj *p, async_callback caller_cb, void *user_data);
 
 /************************************************************************************************/
 /**

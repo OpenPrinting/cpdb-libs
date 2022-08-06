@@ -662,6 +662,51 @@ void get_media_size(PrinterObj *p, const char *media_size, int *width, int *leng
     }
 }
 
+void acquire_details_cb(PrintBackend *proxy, GAsyncResult *res, gpointer user_data)
+{
+    AsyncObj *a = user_data;
+    
+    PrinterObj *p = a->p;
+    async_callback caller_cb = a->caller_cb;
+    
+    p->options = get_new_Options();
+    GError *error = NULL;
+    int num_options;
+    GVariant *var;
+    
+    print_backend_call_get_all_options_finish (proxy, &num_options, &var, res, &error);
+    
+    if (!error)
+    {
+        unpack_options(var, num_options, p->options);
+        caller_cb(p, TRUE, a->user_data);
+    }
+    else
+    {
+        DBG_LOG("Error acquiring printer details", error->message, ERR);
+        caller_cb(p, FALSE, a->user_data);
+    }
+    
+    free(a);
+}
+
+void acquire_details(PrinterObj *p, async_callback caller_cb, void *user_data)
+{
+    if (p->options)
+    {
+        caller_cb(p, TRUE, user_data);
+        return;
+    }
+    
+    AsyncObj *a = malloc(sizeof(AsyncObj));
+    a->p = p;
+    a->caller_cb = caller_cb;
+    a->user_data = user_data;
+    
+    print_backend_call_get_all_options(p->backend_proxy, p->id, 
+                                        NULL, (GAsyncReadyCallback) acquire_details_cb, a);
+}
+
 /**
 ________________________________________________ Settings __________________________________________
 **/

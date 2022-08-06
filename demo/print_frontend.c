@@ -20,6 +20,14 @@ static int remove_printer_callback(PrinterObj *p)
     g_message("Removed Printer %s : %s!\n", p->name, p->backend_name);
 }
 
+static void acquire_details_callback(PrinterObj *p, int success, void *user_data)
+{
+	if (success)
+		g_message("Details acquired for %s : %s\n", p->name, p->backend_name);
+	else
+		g_message("Could not acquire printer details for %s : %s\n", p->name, p->backend_name);
+}
+
 int main(int argc, char **argv)
 {
     event_callback add_cb = (event_callback)add_printer_callback;
@@ -281,6 +289,19 @@ gpointer parse_commands(gpointer user_data)
             get_media_size(p, media, &width, &length);
             printf("%dx%d\n", width, length);
         }
+        else if (strcmp(buf, "acquire-details") == 0)
+        {
+			char printer_id[100];
+            char backend_name[100];
+            scanf("%s%s", printer_id, backend_name);
+            
+            PrinterObj *p = find_PrinterObj(f, printer_id, backend_name);
+            if(p == NULL)
+              continue;
+
+			g_message("Acquiring printer details asynchronously...\n");
+            acquire_details(p, acquire_details_callback, NULL);
+		}
     }
 }
 
@@ -295,22 +316,23 @@ void display_help()
     printf("%s\n", "unhide-temporary-cups");
     //printf("%s\n", "ping <printer id> ");
     printf("%s\n", "get-default-printer <backend name>");
-    printf("print-file <file path> <printer_id> <backend_name>\n");
-    printf("get-active-jobs-count <printer-name> <backend-name>\n");
-    printf("get-all-jobs <0 for all jobs; 1 for only active>\n");
+    printf("%s\n", "print-file <file path> <printer_id> <backend_name>");
+    printf("%s\n", "get-active-jobs-count <printer-name> <backend-name>");
+    printf("%s\n", "get-all-jobs <0 for all jobs; 1 for only active>");
     printf("%s\n", "get-state <printer id> <backend name>");
     printf("%s\n", "is-accepting-jobs <printer id> <backend name(like \"CUPS\")>");
     printf("%s\n", "cancel-job <job-id> <printer id> <backend name>");
 
-    printf("get-all-options <printer-name> <backend-name>\n");
+	printf("%s\n", "acquire-details <printer id> <backend name>");
+    printf("%s\n", "get-all-options <printer-name> <backend-name>");
     printf("%s\n", "get-default <option name> <printer id> <backend name>");
     printf("%s\n", "get-setting <option name> <printer id> <backend name>");
     printf("%s\n", "get-current <option name> <printer id> <backend name>");
     printf("%s\n", "add-setting <option name> <option value> <printer id> <backend name>");
     printf("%s\n", "clear-setting <option name> <printer id> <backend name>");
+    printf("%s\n", "get-media-size <media> <printer id> <backend name>");
     printf("%s\n", "get-human-readable-option-name <printer id> <backend name> <option name>");
     printf("%s\n", "get-human-readable-choice-name <printer id> <backend name> <option name> <choice name>");
-    printf("%s\n", "get-media-size <media> <printer id> <backend name>");
 
     printf("pickle-printer <printer id> <backend name>\n");
 }

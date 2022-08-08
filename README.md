@@ -11,14 +11,6 @@ If one opens the print dialog, the dialog will not talk directly to CUPS, Google
 
 ## Dependencies
 
- - [CUPS](https://github.com/apple/cups/releases) : Version >= 2.2 
- 
- Installing bleeding edge release from [here](https://github.com/apple/cups/releases). (Preferable!)
- 
- OR
-
-`sudo apt install cups`
-
  - GLIB 2.0 :
 `sudo apt install libglib2.0-dev`
 

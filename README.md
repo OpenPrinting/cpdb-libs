@@ -17,7 +17,7 @@ If one opens the print dialog, the dialog will not talk directly to CUPS, Google
  
  OR
 
-`sudo apt install cups libcups2-dev`
+`sudo apt install cups`
 
  - GLIB 2.0 :
 `sudo apt install libglib2.0-dev`

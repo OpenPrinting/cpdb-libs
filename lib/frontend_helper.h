@@ -13,7 +13,6 @@ extern "C" {
 #include "common_helper.h"
 #include "backend_interface.h"
 #include "frontend_interface.h"
-#include <cups/cups.h>
 
 #define INFO 3
 #define WARN 2

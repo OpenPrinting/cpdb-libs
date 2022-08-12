@@ -2,9 +2,9 @@
     <interface name="org.openprinting.PrintFrontend">
         <signal name="RefreshBackend" />
         <signal name="StopListing"/>
-        <signal name="HideRemotePrintersCUPS"/>
-        <signal name="UnhideRemotePrintersCUPS"/>
-        <signal name="HideTemporaryPrintersCUPS"/>
-        <signal name="UnhideTemporaryPrintersCUPS"/>
+        <signal name="HideRemotePrinters"/>
+        <signal name="UnhideRemotePrinters"/>
+        <signal name="HideTemporaryPrinters"/>
+        <signal name="UnhideTemporaryPrinters"/>
     </interface>
 </node>

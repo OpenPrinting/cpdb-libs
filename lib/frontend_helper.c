@@ -231,24 +231,24 @@ void refresh_printer_list(FrontendObj *f)
     print_frontend_emit_refresh_backend(f->skeleton);
 }
 
-void hide_remote_cups_printers(FrontendObj *f)
+void hide_remote_printers(FrontendObj *f)
 {
-    print_frontend_emit_hide_remote_printers_cups(f->skeleton);
+    print_frontend_emit_hide_remote_printers(f->skeleton);
 }
 
-void unhide_remote_cups_printers(FrontendObj *f)
+void unhide_remote_printers(FrontendObj *f)
 {
-    print_frontend_emit_unhide_remote_printers_cups(f->skeleton);
+    print_frontend_emit_unhide_remote_printers(f->skeleton);
 }
 
-void hide_temporary_cups_printers(FrontendObj *f)
+void hide_temporary_printers(FrontendObj *f)
 {
-    print_frontend_emit_hide_temporary_printers_cups(f->skeleton);
+    print_frontend_emit_hide_temporary_printers(f->skeleton);
 }
 
-void unhide_temporary_cups_printers(FrontendObj *f)
+void unhide_temporary_printers(FrontendObj *f)
 {
-    print_frontend_emit_unhide_temporary_printers_cups(f->skeleton);
+    print_frontend_emit_unhide_temporary_printers(f->skeleton);
 }
 
 PrinterObj *find_PrinterObj(FrontendObj *f, char *printer_id, char *backend_name)

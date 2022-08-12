@@ -68,25 +68,25 @@ gpointer parse_commands(gpointer user_data)
             refresh_printer_list(f);
             g_message("Getting changes in printer list..\n");
         }
-        else if (strcmp(buf, "hide-remote-cups") == 0)
+        else if (strcmp(buf, "hide-remote") == 0)
         {
-            hide_remote_cups_printers(f);
-            g_message("Hiding remote printers discovered by the cups backend..\n");
+            hide_remote_printers(f);
+            g_message("Hiding remote printers discovered by the backend..\n");
         }
-        else if (strcmp(buf, "unhide-remote-cups") == 0)
+        else if (strcmp(buf, "unhide-remote") == 0)
         {
-            unhide_remote_cups_printers(f);
-            g_message("Unhiding remote printers discovered by the cups backend..\n");
+            unhide_remote_printers(f);
+            g_message("Unhiding remote printers discovered by the backend..\n");
         }
-        else if (strcmp(buf, "hide-temporary-cups") == 0)
+        else if (strcmp(buf, "hide-temporary") == 0)
         {
-            hide_temporary_cups_printers(f);
-            g_message("Hiding remote printers discovered by the cups backend..\n");
+            hide_temporary_printers(f);
+            g_message("Hiding remote printers discovered by the backend..\n");
         }
-        else if (strcmp(buf, "unhide-temporary-cups") == 0)
+        else if (strcmp(buf, "unhide-temporary") == 0)
         {
-            unhide_temporary_cups_printers(f);
-            g_message("Unhiding remote printers discovered by the cups backend..\n");
+            unhide_temporary_printers(f);
+            g_message("Unhiding remote printers discovered by the backend..\n");
         }
         else if (strcmp(buf, "get-all-options") == 0)
         {
@@ -310,10 +310,10 @@ void display_help()
     g_message("Available commands .. ");
     printf("%s\n", "stop");
     printf("%s\n", "refresh");
-    printf("%s\n", "hide-remote-cups");
-    printf("%s\n", "unhide-remote-cups");
-    printf("%s\n", "hide-temporary-cups");
-    printf("%s\n", "unhide-temporary-cups");
+    printf("%s\n", "hide-remote");
+    printf("%s\n", "unhide-remote");
+    printf("%s\n", "hide-temporary");
+    printf("%s\n", "unhide-temporary");
     //printf("%s\n", "ping <printer id> ");
     printf("%s\n", "get-default-printer <backend name>");
     printf("%s\n", "print-file <file path> <printer_id> <backend_name>");

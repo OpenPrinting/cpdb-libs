@@ -133,17 +133,17 @@ PrinterObj *remove_printer(FrontendObj *f, char *printer_id, char *backend_name)
 void refresh_printer_list(FrontendObj *f);
 
 /**
- * Hide the remote printers of the CUPS backend
+ * Hide the remote printers of the backend
  */
-void hide_remote_cups_printers(FrontendObj *f);
-void unhide_remote_cups_printers(FrontendObj *f);
+void hide_remote_printers(FrontendObj *f);
+void unhide_remote_printers(FrontendObj *f);
 
 /**
- * Hide those (temporary) printers which have been discovered by the CUPS backend,
+ * Hide those (temporary) printers which have been discovered by the backend,
  * but haven't been yet set up locally
  */
-void hide_temporary_cups_printers(FrontendObj *f);
-void unhide_temporary_cups_printers(FrontendObj *f);
+void hide_temporary_printers(FrontendObj *f);
+void unhide_temporary_printers(FrontendObj *f);
 
 /**
  * Read the file installed by the backend and create a proxy object 

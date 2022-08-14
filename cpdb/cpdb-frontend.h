@@ -127,7 +127,7 @@ gboolean cpdbAddPrinter(cpdb_frontend_obj_t *f, cpdb_printer_obj_t *p);
  * The cpdb_printer_obj_t removed is not deallocated. 
  * The caller is responsible for deallocation
  */
-cpdb_printer_obj_t *cpdbRemovePrinter(cpdb_frontend_obj_t *f, char *printer_id, char *backend_name);
+cpdb_printer_obj_t *cpdbRemovePrinter(cpdb_frontend_obj_t *f, const char *printer_id, const char *backend_name);
 void cpdbRefreshPrinterList(cpdb_frontend_obj_t *f);
 
 /**
@@ -152,7 +152,7 @@ PrintBackend *cpdbCreateBackendFromFile(const char *);
 /**
  * Find the cpdb_printer_obj_t instance with a particular id ans backend name.
  */
-cpdb_printer_obj_t *cpdbFindPrinterObj(cpdb_frontend_obj_t *, char *printer_id, char *backend_name);
+cpdb_printer_obj_t *cpdbFindPrinterObj(cpdb_frontend_obj_t *, const char *printer_id, const char *backend_name);
 
 /**
  * Get the default printer for a particular backend
@@ -162,7 +162,7 @@ cpdb_printer_obj_t *cpdbFindPrinterObj(cpdb_frontend_obj_t *, char *printer_id, 
  *                          or
  *                          the complete name ("org.openprinting.Backend.CUPS")
  */
-char *cpdbGetDefaultPrinter(cpdb_frontend_obj_t *, char *backend_name);
+char *cpdbGetDefaultPrinter(cpdb_frontend_obj_t *, const char *backend_name);
 
 /**
  * Get the list of (all/active) jobs from all the backends
@@ -242,7 +242,7 @@ cpdb_options_t *cpdbGetAllOptions(cpdb_printer_obj_t *);
  * Option if the option was found
  * NULL if the option with desired name doesn't exist 
  */
-cpdb_option_t *cpdbGetOption(cpdb_printer_obj_t *p, char *name);
+cpdb_option_t *cpdbGetOption(cpdb_printer_obj_t *p, const char *name);
 
 /**
  * Get the default value corresponding to the option name
@@ -253,7 +253,7 @@ cpdb_option_t *cpdbGetOption(cpdb_printer_obj_t *p, char *name);
  * NULL if the option with the particular name doesn't exist.
  * 
  */
-char *cpdbGetDefault(cpdb_printer_obj_t *p, char *name);
+char *cpdbGetDefault(cpdb_printer_obj_t *p, const char *name);
 
 /**
  * Get the value of the setting corresponding to the name
@@ -263,7 +263,7 @@ char *cpdbGetDefault(cpdb_printer_obj_t *p, char *name);
  * NULL if the setting with the particular name doesn't exist.
  * 
  */
-char *cpdbGetSetting(cpdb_printer_obj_t *p, char *name);
+char *cpdbGetSetting(cpdb_printer_obj_t *p, const char *name);
 
 /**
  * Get the 'current value' of the attribute with the particular name
@@ -272,7 +272,7 @@ char *cpdbGetSetting(cpdb_printer_obj_t *p, char *name);
  * else the default value is returned;
  * i.e. , the settings override the defaults
  */
-char *cpdbGetCurrent(cpdb_printer_obj_t *p, char *name);
+char *cpdbGetCurrent(cpdb_printer_obj_t *p, const char *name);
 
 /**
  * Get number of active jobs(pending + paused + printing)
@@ -284,8 +284,8 @@ int cpdbGetActiveJobsCount(cpdb_printer_obj_t *);
  * Submits a single file for printing, using the settings stored in 
  * p->settings
  */
-char *cpdbPrintFile(cpdb_printer_obj_t *p, char *file_path);
-char *cpdbPrintFilePath(cpdb_printer_obj_t *p, char *file_path, char *final_file_path);
+char *cpdbPrintFile(cpdb_printer_obj_t *p, const char *file_path);
+char *cpdbPrintFilePath(cpdb_printer_obj_t *p, const char *file_path, const char *final_file_path);
 
 /**
  * Wrapper for the cpdbAddSetting(cpdb_settings_t* , ..) function.
@@ -295,7 +295,7 @@ char *cpdbPrintFilePath(cpdb_printer_obj_t *p, char *file_path, char *final_file
  * @param name : name of the setting
  * @param val : value of the setting
  */
-void cpdbAddSettingToPrinter(cpdb_printer_obj_t *p, char *name, char *val);
+void cpdbAddSettingToPrinter(cpdb_printer_obj_t *p, const char *name, const char *val);
 
 /**
  * Wrapper for the cpdbClearSetting(cpdb_settings_t* , ..) function.
@@ -303,7 +303,7 @@ void cpdbAddSettingToPrinter(cpdb_printer_obj_t *p, char *name, char *val);
  * 
  * @param name : name of the setting
  */
-gboolean cpdbClearSettingFromPrinter(cpdb_printer_obj_t *p, char *name);
+gboolean cpdbClearSettingFromPrinter(cpdb_printer_obj_t *p, const char *name);
 
 /**
  * Cancel a job on the printer
@@ -312,7 +312,7 @@ gboolean cpdbClearSettingFromPrinter(cpdb_printer_obj_t *p, char *name);
  * TRUE if job cancellation was successful
  * FALSE otherwise
  */
-gboolean cpdbCancelJob(cpdb_printer_obj_t *p, char *job_id);
+gboolean cpdbCancelJob(cpdb_printer_obj_t *p, const char *job_id);
 
 /**
  * Serialize the cpdb_printer_obj_t and save it to a file
@@ -338,7 +338,7 @@ cpdb_printer_obj_t *cpdbResurrectPrinterFromFile(const char *filename);
  *
  * @param option_name : name of the setting
  */
-char *cpdbGetHumanReadableOptionName(cpdb_printer_obj_t *p, char *option_name);
+char *cpdbGetHumanReadableOptionName(cpdb_printer_obj_t *p, const char *option_name);
 
 /**
  * Finds the human readable English name of the choice for the given setting.
@@ -346,7 +346,7 @@ char *cpdbGetHumanReadableOptionName(cpdb_printer_obj_t *p, char *option_name);
  * @param option_name : name of the setting
  * @param choice_name : value of the choice
  */
-char *cpdbGetHumanReadableChoiceName(cpdb_printer_obj_t *p, char *option_name, char *choice_name);
+char *cpdbGetHumanReadableChoiceName(cpdb_printer_obj_t *p, const char *option_name, const char *choice_name);
 
 /**
  * Finds the dimension for a given media-size
@@ -416,7 +416,7 @@ void cpdbAddSetting(cpdb_settings_t *, const char *name, const char *val);
  * TRUE , if the setting was cleared
  * FALSE , if the setting wasn't there and thus couldn't be cleared
  */
-gboolean cpdbClearSetting(cpdb_settings_t *, char *name);
+gboolean cpdbClearSetting(cpdb_settings_t *, const char *name);
 
 /**
  * Serialize the cpdb_settings_t struct into a GVariant of type a(ss)
@@ -492,7 +492,7 @@ void cpdbUnpackJobArray(GVariant *var, int num_jobs, cpdb_job_t *jobs, char *bac
  */
 
 void CPDB_DEBUG_LOG(const char *msg, const char *error, int msg_level);
-char *cpdbConcat(char *printer_id, char *backend_name);
+char *cpdbConcat(const char *printer_id, const char *backend_name);
 /**
  * 'Unpack' (Deserialize) the GVariant returned in cpdbGetAllOptions
  * and fill the cpdb_options_t structure approriately

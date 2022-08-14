@@ -213,7 +213,7 @@ gboolean cpdbAddPrinter(cpdb_frontend_obj_t *f, cpdb_printer_obj_t *p)
     return TRUE;
 }
 
-cpdb_printer_obj_t *cpdbRemovePrinter(cpdb_frontend_obj_t *f, char *printer_id, char *backend_name)
+cpdb_printer_obj_t *cpdbRemovePrinter(cpdb_frontend_obj_t *f, const char *printer_id, const char *backend_name)
 {
     char *key = cpdbConcat(printer_id, backend_name);
     if (g_hash_table_contains(f->printer, key))
@@ -221,8 +221,11 @@ cpdb_printer_obj_t *cpdbRemovePrinter(cpdb_frontend_obj_t *f, char *printer_id, 
         cpdb_printer_obj_t *p = cpdbFindPrinterObj(f, printer_id, backend_name);
         g_hash_table_remove(f->printer, key);
         f->num_printers--;
+        free(key);
         return p;
     }
+    
+    free(key);
     return NULL;
 }
 
@@ -251,7 +254,7 @@ void cpdbUnhideTemporaryPrinters(cpdb_frontend_obj_t *f)
     print_frontend_emit_unhide_temporary_printers(f->skeleton);
 }
 
-cpdb_printer_obj_t *cpdbFindPrinterObj(cpdb_frontend_obj_t *f, char *printer_id, char *backend_name)
+cpdb_printer_obj_t *cpdbFindPrinterObj(cpdb_frontend_obj_t *f, const char *printer_id, const char *backend_name)
 {
     char *hashtable_key = malloc(sizeof(char) * (strlen(printer_id) + strlen(backend_name) + 2));
     sprintf(hashtable_key, "%s#%s", printer_id, backend_name);
@@ -265,7 +268,7 @@ cpdb_printer_obj_t *cpdbFindPrinterObj(cpdb_frontend_obj_t *f, char *printer_id,
     return p;
 }
 
-char *cpdbGetDefaultPrinter(cpdb_frontend_obj_t *f, char *backend_name)
+char *cpdbGetDefaultPrinter(cpdb_frontend_obj_t *f, const char *backend_name)
 {
     PrintBackend *proxy = g_hash_table_lookup(f->backend, backend_name);
     if (!proxy)
@@ -434,7 +437,7 @@ cpdb_options_t *cpdbGetAllOptions(cpdb_printer_obj_t *p)
     }
 }
 
-cpdb_option_t *cpdbGetOption(cpdb_printer_obj_t *p, char *name)
+cpdb_option_t *cpdbGetOption(cpdb_printer_obj_t *p, const char *name)
 {
     cpdbGetAllOptions(p);
     if (!g_hash_table_contains(p->options->table, name))
@@ -442,7 +445,7 @@ cpdb_option_t *cpdbGetOption(cpdb_printer_obj_t *p, char *name)
     return (cpdb_option_t *)(g_hash_table_lookup(p->options->table, name));
 }
 
-char *cpdbGetDefault(cpdb_printer_obj_t *p, char *name)
+char *cpdbGetDefault(cpdb_printer_obj_t *p, const char *name)
 {
     cpdb_option_t *o = cpdbGetOption(p, name);
     if (!o)
@@ -450,14 +453,14 @@ char *cpdbGetDefault(cpdb_printer_obj_t *p, char *name)
     return o->default_value;
 }
 
-char *cpdbGetSetting(cpdb_printer_obj_t *p, char *name)
+char *cpdbGetSetting(cpdb_printer_obj_t *p, const char *name)
 {
     if (!g_hash_table_contains(p->settings->table, name))
         return NULL;
     return g_hash_table_lookup(p->settings->table, name);
 }
 
-char *cpdbGetCurrent(cpdb_printer_obj_t *p, char *name)
+char *cpdbGetCurrent(cpdb_printer_obj_t *p, const char *name)
 {
     char *set = cpdbGetSetting(p, name);
     if (set)
@@ -472,7 +475,7 @@ int cpdbGetActiveJobsCount(cpdb_printer_obj_t *p)
     print_backend_call_get_active_jobs_count_sync(p->backend_proxy, p->id, &count, NULL, NULL);
     return count;
 }
-char *cpdbPrintFile(cpdb_printer_obj_t *p, char *file_path)
+char *cpdbPrintFile(cpdb_printer_obj_t *p, const char *file_path)
 {
     char *jobid;
     char *absolute_file_path = cpdbGetAbsolutePath(file_path);
@@ -490,7 +493,7 @@ char *cpdbPrintFile(cpdb_printer_obj_t *p, char *file_path)
     cpdbSaveSettingsToDisk(p->settings);
     return jobid;
 }
-char *cpdbPrintFilePath(cpdb_printer_obj_t *p, char *file_path, char *final_file_path)
+char *cpdbPrintFilePath(cpdb_printer_obj_t *p, const char *file_path, const char *final_file_path)
 {
     char *result;
     char *absolute_file_path = cpdbGetAbsolutePath(file_path);
@@ -509,15 +512,15 @@ char *cpdbPrintFilePath(cpdb_printer_obj_t *p, char *file_path, char *final_file
 
     return result;
 }
-void cpdbAddSettingToPrinter(cpdb_printer_obj_t *p, char *name, char *val)
+void cpdbAddSettingToPrinter(cpdb_printer_obj_t *p, const char *name, const char *val)
 {
     cpdbAddSetting(p->settings, name, val);
 }
-gboolean cpdbClearSettingFromPrinter(cpdb_printer_obj_t *p, char *name)
+gboolean cpdbClearSettingFromPrinter(cpdb_printer_obj_t *p, const char *name)
 {
     cpdbClearSetting(p->settings, name);
 }
-gboolean cpdbCancelJob(cpdb_printer_obj_t *p, char *job_id)
+gboolean cpdbCancelJob(cpdb_printer_obj_t *p, const char *job_id)
 {
     gboolean status;
     print_backend_call_cancel_job_sync(p->backend_proxy, job_id, p->id,
@@ -620,7 +623,7 @@ cpdb_printer_obj_t *cpdbResurrectPrinterFromFile(const char *filename)
     return p;
 }
 
-char *cpdbGetHumanReadableOptionName(cpdb_printer_obj_t *p, char *option_name)
+char *cpdbGetHumanReadableOptionName(cpdb_printer_obj_t *p, const char *option_name)
 {
     char *human_readable_name;
     GError *error = NULL;
@@ -628,13 +631,13 @@ char *cpdbGetHumanReadableOptionName(cpdb_printer_obj_t *p, char *option_name)
                                                            &human_readable_name, NULL, &error);
     if(error) {
         CPDB_DEBUG_LOG("Error getting human readable option name", error->message, CPDB_DEBUG_LEVEL_ERR);
-        return option_name;
+        return cpdbGetStringCopy(option_name);
     } else {
         return human_readable_name;
     }
 }
 
-char *cpdbGetHumanReadableChoiceName(cpdb_printer_obj_t *p, char *option_name, char* choice_name)
+char *cpdbGetHumanReadableChoiceName(cpdb_printer_obj_t *p, const char *option_name, const char* choice_name)
 {
     char *human_readable_name;
     GError *error = NULL;
@@ -642,7 +645,7 @@ char *cpdbGetHumanReadableChoiceName(cpdb_printer_obj_t *p, char *option_name, c
                                                            &human_readable_name, NULL, &error);
     if(error) {
         CPDB_DEBUG_LOG("Error getting human readable choice name", error->message, CPDB_DEBUG_LEVEL_ERR);
-        return choice_name;
+        return cpdbGetStringCopy(choice_name);
     } else {
         return human_readable_name;
     }
@@ -746,7 +749,7 @@ void cpdbAddSetting(cpdb_settings_t *s, const char *name, const char *val)
     }
 }
 
-gboolean cpdbClearSetting(cpdb_settings_t *s, char *name)
+gboolean cpdbClearSetting(cpdb_settings_t *s, const char *name)
 {
     if (g_hash_table_contains(s->table, name))
     {
@@ -903,7 +906,7 @@ void CPDB_DEBUG_LOG(const char *msg, const char *error, int msg_level)
         fflush(stdout);
     }
 }
-char *cpdbConcat(char *printer_id, char *backend_name)
+char *cpdbConcat(const char *printer_id, const char *backend_name)
 {
     char *str = malloc(sizeof(char) * (strlen(printer_id) + strlen(backend_name) + 2));
     sprintf(str, "%s#%s", printer_id, backend_name);

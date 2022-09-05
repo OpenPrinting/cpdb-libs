@@ -289,6 +289,19 @@ gpointer parse_commands(gpointer user_data)
             cpdbGetMediaSize(p, media, &width, &length);
             printf("%dx%d\n", width, length);
         }
+        else if (strcmp(buf, "get-media-margins") == 0)
+        {
+			char printer_id[100];
+			char backend_name[100];
+			char media[100];
+			scanf("%s%s%s", media, printer_id, backend_name);
+			cpdb_printer_obj_t *p = cpdbFindPrinterObj(f, printer_id, backend_name);
+			
+			cpdb_margin_t *margins;
+			int num_margins = cpdbGetMediaMargins(p, media, &margins);
+			for (int i = 0; i < num_margins; i++)
+				printf("%d %d %d %d\n", margins[i].left, margins[i].right, margins[i].top, margins[i].bottom);
+		}
         else if (strcmp(buf, "acquire-details") == 0)
         {
 			char printer_id[100];
@@ -331,6 +344,7 @@ void display_help()
     printf("%s\n", "add-setting <option name> <option value> <printer id> <backend name>");
     printf("%s\n", "clear-setting <option name> <printer id> <backend name>");
     printf("%s\n", "get-media-size <media> <printer id> <backend name>");
+    printf("%s\n", "get-media-margins <media> <printer id> <backend name>");
     printf("%s\n", "get-human-readable-option-name <printer id> <backend name> <option name>");
     printf("%s\n", "get-human-readable-choice-name <printer id> <backend name> <option name> <choice name>");
 

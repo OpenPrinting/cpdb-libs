@@ -28,6 +28,7 @@ gboolean cpdbGetBoolean(const char *);
 char *cpdbGetStringCopy(const char *);
 void cpdbUnpackStringArray(GVariant *variant, int num_val, char ***val);
 GVariant *cpdbPackStringArray(int num_val, char **val);
+GVariant *cpdbPackMediaArray(int num_val, int (*margins)[4]);
 char *cpdbGetAbsolutePath(const char *file_path);
 char *cpdbExtractFileName(const char* file_path);
 /*********LISTING OF ALL POSSIBLE OPTIONS*****/

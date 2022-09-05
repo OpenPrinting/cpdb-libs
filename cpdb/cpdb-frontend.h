@@ -30,6 +30,8 @@ typedef struct cpdb_async_obj_s cpdb_async_obj_t;
 typedef struct cpdb_settings_s cpdb_settings_t;
 typedef struct cpdb_options_s cpdb_options_t;
 typedef struct cpdb_option_s cpdb_option_t;
+typedef struct cpdb_margin_s cpdb_margin_t;
+typedef struct cpdb_media_s cpdb_media_t;
 typedef struct cpdb_job_s cpdb_job_t;
 
 typedef int (*cpdb_event_callback)(cpdb_printer_obj_t *);
@@ -349,6 +351,13 @@ char *cpdbGetHumanReadableOptionName(cpdb_printer_obj_t *p, const char *option_n
 char *cpdbGetHumanReadableChoiceName(cpdb_printer_obj_t *p, const char *option_name, const char *choice_name);
 
 /**
+ * Get a single cpdb_media_t struct corresponding to the give media name
+ * 
+ * @param media : name of media-size
+ */
+cpdb_media_t *cpdbGetMedia(cpdb_printer_obj_t *p, const char *media);
+
+/**
  * Finds the dimension for a given media-size
  *
  * @param media : name of media-size
@@ -356,6 +365,14 @@ char *cpdbGetHumanReadableChoiceName(cpdb_printer_obj_t *p, const char *option_n
  * @param length : address of length of media-size to be returned
  */
 void cpdbGetMediaSize(cpdb_printer_obj_t *p, const char *media, int *width, int *length);
+
+/**
+ * Find the margins for a given media-size
+ * 
+ * @param media : name of media-size
+ * @param margins : margins array
+ */
+int cpdbGetMediaMargins(cpdb_printer_obj_t *p, const char *media, cpdb_margin_t **margins);
 
 
 struct cpdb_async_obj_s {
@@ -447,8 +464,9 @@ ______________________________________ cpdb_options_t __________________________
 **/
 struct cpdb_options_s
 {
-    int count;
+    int count; int media_count;
     GHashTable *table; /**[name] --> cpdb_option_t struct**/
+    GHashTable *media; /**[name] --> cpdb_media_t struct**/
 };
 
 /**
@@ -469,6 +487,36 @@ struct cpdb_option_s
     char *default_value;
 };
 void cpdbPrintOption(const cpdb_option_t *opt);
+
+/************************************************************************************************/
+
+/**
+______________________________________ cpdb_margin_t __________________________________________
+
+**/
+
+struct cpdb_margin_s
+{
+	int left;
+	int right;
+	int top;
+	int bottom;
+};
+
+/************************************************************************************************/
+/**
+______________________________________ cpdb_media_t __________________________________________
+
+**/
+
+struct cpdb_media_s
+{
+	const char *name;
+	int width;
+	int length;
+	int num_margins;
+	cpdb_margin_t *margins;
+};
 
 /************************************************************************************************/
 /**
@@ -497,7 +545,7 @@ char *cpdbConcat(const char *printer_id, const char *backend_name);
  * 'Unpack' (Deserialize) the GVariant returned in cpdbGetAllOptions
  * and fill the cpdb_options_t structure approriately
  */
-void cpdbUnpackOptions(GVariant *var, int num_options, cpdb_options_t *options);
+void cpdbUnpackOptions(int num_options, GVariant *var, int num_media, GVariant *media_var, cpdb_options_t *options);
 
 #ifdef __cplusplus
 }

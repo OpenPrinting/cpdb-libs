@@ -421,13 +421,13 @@ cpdb_options_t *cpdbGetAllOptions(cpdb_printer_obj_t *p)
 
     p->options = cpdbGetNewOptions();
     GError *error = NULL;
-    int num_options;
-    GVariant *var;
+    int num_options, num_media;
+    GVariant *var, *media_var;
     print_backend_call_get_all_options_sync(p->backend_proxy, p->id,
-                                            &num_options, &var, NULL, &error);
+                                            &num_options, &var, &num_media, &media_var, NULL, &error);
     if (!error)
     {
-        cpdbUnpackOptions(var, num_options, p->options);
+        cpdbUnpackOptions(num_options, var, num_media, media_var, p->options);
         return p->options;
     }
     else 
@@ -651,18 +651,40 @@ char *cpdbGetHumanReadableChoiceName(cpdb_printer_obj_t *p, const char *option_n
     }
 }
 
-void cpdbGetMediaSize(cpdb_printer_obj_t *p, const char *media_size, int *width, int *length)
+cpdb_media_t *cpdbGetMedia(cpdb_printer_obj_t *p, const char *media)
 {
-    GError *error = NULL;
-    GVariant *var;
-    print_backend_call_get_media_size_sync(p->backend_proxy, media_size,
-                                            &var, NULL, &error);
-    if (!error)
-        g_variant_get(var, "(ii)", width, length);
-    else 
+	cpdbGetAllOptions(p);
+	
+	return (cpdb_media_t *) g_hash_table_lookup(p->options->media, media);
+}
+
+void cpdbGetMediaSize(cpdb_printer_obj_t *p, const char *media, int *width, int *length)
+{    
+    cpdb_media_t *m = cpdbGetMedia(p, media);
+    if (m)
     {
-        CPDB_DEBUG_LOG("Error getting media size", error->message, CPDB_DEBUG_LEVEL_ERR);
-    }
+		*width = m->width;
+		*length = m->length;
+	}
+	else
+	{
+		*width = 0;
+		*length = 0;
+	}
+}
+
+int cpdbGetMediaMargins(cpdb_printer_obj_t *p, const char *media, cpdb_margin_t **margins)
+{
+	int num_margins = 0;
+	cpdb_media_t *m = cpdbGetMedia(p, media);
+	
+	if (m)
+	{
+		num_margins = m->num_margins;
+		*margins = m->margins;
+	}
+	
+	return num_margins;	
 }
 
 void acquire_details_cb(PrintBackend *proxy, GAsyncResult *res, gpointer user_data)
@@ -674,14 +696,14 @@ void acquire_details_cb(PrintBackend *proxy, GAsyncResult *res, gpointer user_da
     
     p->options = cpdbGetNewOptions();
     GError *error = NULL;
-    int num_options;
-    GVariant *var;
+    int num_options, num_media;
+    GVariant *var, *media_var;
     
-    print_backend_call_get_all_options_finish (proxy, &num_options, &var, res, &error);
+    print_backend_call_get_all_options_finish (proxy, &num_options, &var, &num_media, &media_var, res, &error);
     
     if (!error)
     {
-        cpdbUnpackOptions(var, num_options, p->options);
+        cpdbUnpackOptions(num_options, var, num_media, media_var, p->options);
         caller_cb(p, TRUE, a->user_data);
     }
     else
@@ -848,6 +870,7 @@ cpdb_options_t *cpdbGetNewOptions()
     cpdb_options_t *o = g_new0(cpdb_options_t, 1);
     o->count = 0;
     o->table = g_hash_table_new(g_str_hash, g_str_equal);
+    o->media = g_hash_table_new(g_str_hash, g_str_equal);
     return o;
 }
 
@@ -913,7 +936,7 @@ char *cpdbConcat(const char *printer_id, const char *backend_name)
     return str;
 }
 
-void cpdbUnpackOptions(GVariant *var, int num_options, cpdb_options_t *options)
+void cpdbUnpackOptions(int num_options, GVariant *var, int num_media, GVariant *media_var, cpdb_options_t *options)
 {
     options->count = num_options;
     int i, j;
@@ -940,5 +963,32 @@ void cpdbUnpackOptions(GVariant *var, int num_options, cpdb_options_t *options)
         }
         g_hash_table_insert(options->table, (gpointer)opt->option_name, (gpointer)opt);
     }
+    
+    options->media_count = num_media;
+    int width, length, num_mar;
+    GVariantIter *media_iter, *margin_iter;
+    g_variant_get(media_var, "a(siiia(iiii))", &media_iter);
+    cpdb_media_t *media;
+    for (i = 0; i < num_media; i++)
+    {
+		media = g_new0(cpdb_media_t, 1);
+		g_variant_iter_loop(media_iter, "(siiia(iiii))",
+							&name, &width, &length, &num_mar, &margin_iter);
+		media->name = cpdbGetStringCopy(name);
+		media->width = width;
+		media->length = length;
+		media->num_margins = num_mar;
+		media->margins = malloc(sizeof(cpdb_printer_obj_t) * num_mar);
+		for (j = 0; j < num_mar; j++)
+		{
+			g_variant_iter_loop(margin_iter, "(iiii)", 
+								&media->margins[j].left, 
+								&media->margins[j].right, 
+								&media->margins[j].top, 
+								&media->margins[j].bottom);
+		}
+		g_hash_table_insert(options->media, (gpointer)media->name, (gpointer) media);
+	}
+    
 }
 /************************************************************************************************/

@@ -63,6 +63,21 @@ GVariant *cpdbPackStringArray(int num_val, char **val)
     return values;
 }
 
+GVariant *cpdbPackMediaArray(int num_val, int (*margins)[4])
+{
+	GVariantBuilder *builder;
+	GVariant *values;
+	builder = g_variant_builder_new(G_VARIANT_TYPE("a(iiii)"));
+	for (int i = 0; i < num_val; i++)
+	{
+		g_variant_builder_add(builder, "(iiii)", 
+							  margins[i][0], margins[i][1], margins[i][2], margins[i][3]);
+	}
+	
+	values = g_variant_new("a(iiii)", builder);
+	return values;
+}
+
 char *cpdbGetAbsolutePath(const char *file_path)
 {
     if (!file_path)

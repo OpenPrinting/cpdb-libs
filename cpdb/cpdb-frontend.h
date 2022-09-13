@@ -164,7 +164,28 @@ cpdb_printer_obj_t *cpdbFindPrinterObj(cpdb_frontend_obj_t *, const char *printe
  *                          or
  *                          the complete name ("org.openprinting.Backend.CUPS")
  */
-char *cpdbGetDefaultPrinter(cpdb_frontend_obj_t *, const char *backend_name);
+char *cpdbGetDefaultPrinterForBackend(cpdb_frontend_obj_t *, const char *backend_name);
+
+/**
+ * Returns a GList of all default printers
+ * in the config file
+ * 
+ */
+GList *cpdbLoadDefaultPrinters();
+
+/**
+ * Mark a printer as default
+ * Takes care of duplicate entries in the config file
+ * 
+ */
+void cpdbMakeDefaultPrinter(cpdb_printer_obj_t *p);
+
+/**
+ * Get a single default printer
+ * Always returns a printer, unless there are no printers connected to the frontend
+ * 
+ */
+cpdb_printer_obj_t *cpdbGetDefaultPrinter(cpdb_frontend_obj_t *);
 
 /**
  * Get the list of (all/active) jobs from all the backends

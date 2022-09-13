@@ -188,13 +188,27 @@ gpointer parse_commands(gpointer user_data)
         }
         else if (strcmp(buf, "get-default-printer") == 0)
         {
+            cpdb_printer_obj_t *p = cpdbGetDefaultPrinter(f);
+            printf("%s#%s\n", p->name, p->backend_name);
+        }
+        else if (strcmp(buf, "get-default-printer-for-backend") == 0)
+        {
             char backend_name[100];
             scanf("%s", backend_name);
             /**
              * Backend name = The last part of the backend dbus service
              * Eg. "CUPS" or "GCP"
              */
-            printf("%s\n", cpdbGetDefaultPrinter(f, backend_name));
+            printf("%s\n", cpdbGetDefaultPrinterForBackend(f, backend_name));
+        }
+        else if (strcmp(buf, "make-default-printer") == 0)
+        {
+            char printer_id[100];
+            char backend_name[100];
+            scanf("%s%s", printer_id, backend_name);
+            cpdb_printer_obj_t *p = cpdbFindPrinterObj(f, printer_id, backend_name);
+            if (p)
+                cpdbMakeDefaultPrinter(p);
         }
         else if (strcmp(buf, "print-file") == 0)
         {
@@ -329,6 +343,7 @@ void display_help()
     printf("%s\n", "unhide-temporary");
     //printf("%s\n", "ping <printer id> ");
     printf("%s\n", "get-default-printer <backend name>");
+    printf("%s\n", "get-default-printer-for-backend <backend name>");
     printf("%s\n", "print-file <file path> <printer_id> <backend_name>");
     printf("%s\n", "get-active-jobs-count <printer-name> <backend-name>");
     printf("%s\n", "get-all-jobs <0 for all jobs; 1 for only active>");

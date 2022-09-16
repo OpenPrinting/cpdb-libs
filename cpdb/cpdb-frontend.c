@@ -1007,9 +1007,12 @@ cpdb_settings_t *cpdbReadSettingsFromDisk()
 
 void cpdbDeleteSettings(cpdb_settings_t *s)
 {
-    GHashTable *h = s->table;
-    free(s);
-    g_hash_table_destroy(h);
+    if (s)
+    {
+        GHashTable *h = s->table;
+        free(s);
+        g_hash_table_destroy(h);
+    }
 }
 /**
 ________________________________________________ cpdb_options_t __________________________________________

@@ -30,6 +30,54 @@ AC_TYPE_SIZE_T
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([getcwd])
 
+default_printers_file="CPD-default-printers"
+
+AC_ARG_WITH([user-configdir],
+[ AS_HELP_STRING([--with-user-configdir], [Specify the directory for CPD's user config file]) ],
+[
+    AS_MKDIR_P([$withval])
+    AS_CASE(
+        ["$withval"],
+        ["*/"], [
+            AC_DEFINE_UNQUOTED(CPDB_USER_CONFIG_DIR, "$withval"),
+            AC_DEFINE_UNQUOTED(CPDB_USER_DEFAULT_PRINTERS, "$withval$default_printers_file")
+        ],
+        [
+            AC_DEFINE_UNQUOTED(CPDB_USER_CONFIG_DIR, "$withval/"),
+            AC_DEFINE_UNQUOTED(CPDB_USER_DEFAULT_PRINTERS, "$withval/$default_printers_file")
+        ]
+    )
+],
+[
+    config_dir=~/.config/cpdb/
+    AS_MKDIR_P([$config_dir])
+    AC_DEFINE_UNQUOTED(CPDB_USER_CONFIG_DIR, "$config_dir")
+    AC_DEFINE_UNQUOTED(CPDB_USER_DEFAULT_PRINTERS, "$config_dir$default_printers_file")
+])
+
+AC_ARG_WITH([system-configdir],
+[ AS_HELP_STRING([--with-system-configdir], [Specify the directory for CPD's system wide config file]) ],
+[
+    AS_MKDIR_P([$withval])
+    AS_CASE(
+        ["$withval"],
+        ["*/"], [
+            AC_DEFINE_UNQUOTED(CPDB_SYSTEM_CONFIG_DIR, "$withval"),
+            AC_DEFINE_UNQUOTED(CPDB_SYSTEM_DEFAULT_PRINTERS, "$withval$default_printers_file")
+        ],
+        [
+            AC_DEFINE_UNQUOTED(CPDB_SYSTEM_CONFIG_DIR, "$withval/"),
+            AC_DEFINE_UNQUOTED(CPDB_SYSTEM_DEFAULT_PRINTERS, "$withval/$default_printers_file")
+        ]
+    )
+],
+[
+    config_dir=/etc/cpdb/
+    AS_MKDIR_P([$config_dir])
+    AC_DEFINE_UNQUOTED(CPDB_SYSTEM_CONFIG_DIR, "$config_dir")
+    AC_DEFINE_UNQUOTED(CPDB_SYSTEM_DEFAULT_PRINTERS, "$config_dir$default_printers_file")
+])
+
 AC_CONFIG_FILES([Makefile
                  cpdb/Makefile
                  cpdb-backend.pc

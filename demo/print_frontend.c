@@ -201,14 +201,33 @@ gpointer parse_commands(gpointer user_data)
              */
             printf("%s\n", cpdbGetDefaultPrinterForBackend(f, backend_name));
         }
-        else if (strcmp(buf, "make-default-printer") == 0)
+        else if (strcmp(buf, "make-user-default-printer") == 0)
         {
             char printer_id[100];
             char backend_name[100];
             scanf("%s%s", printer_id, backend_name);
             cpdb_printer_obj_t *p = cpdbFindPrinterObj(f, printer_id, backend_name);
             if (p)
-                cpdbMakeDefaultPrinter(p);
+            {
+                if (cpdbMakeUserDefault(p))
+                    printf("Marked printer as user default\n");
+                else
+                    printf("Couldn't mark printer as user default\n");
+            }
+        }
+        else if (strcmp(buf, "make-system-default-printer") == 0)
+        {
+            char printer_id[100];
+            char backend_name[100];
+            scanf("%s%s", printer_id, backend_name);
+            cpdb_printer_obj_t *p = cpdbFindPrinterObj(f, printer_id, backend_name);
+            if (p)
+            {
+                if (cpdbMakeSystemDefault(p))
+                    printf("Marked printer as system default\n");
+                else
+                    printf("Couldn't mark printer as system default\n");
+            }
         }
         else if (strcmp(buf, "print-file") == 0)
         {
@@ -344,6 +363,8 @@ void display_help()
     //printf("%s\n", "ping <printer id> ");
     printf("%s\n", "get-default-printer <backend name>");
     printf("%s\n", "get-default-printer-for-backend <backend name>");
+    printf("%s\n", "make-user-default-printer <printer id> <backend name>");
+    printf("%s\n", "make-system-default-printer <printer id> <backend name>");
     printf("%s\n", "print-file <file path> <printer_id> <backend_name>");
     printf("%s\n", "get-active-jobs-count <printer-name> <backend-name>");
     printf("%s\n", "get-all-jobs <0 for all jobs; 1 for only active>");

@@ -295,6 +295,189 @@ char *cpdbGetDefaultPrinterForBackend(cpdb_frontend_obj_t *f, const char *backen
     return def;
 }
 
+GList *cpdbLoadDefaultPrinters(char *path)
+{
+    char *absolutePath = cpdbGetAbsolutePath(path);
+    FILE *fp = fopen(absolutePath, "r");
+
+    if (fp == NULL)
+    {
+        CPDB_DEBUG_LOG("Couldn't open file for reading", absolutePath, CPDB_DEBUG_LEVEL_WARN);
+        return NULL;
+    }
+
+    char buffer[512];
+    GList *printers = NULL;
+
+    while (fgets(buffer, sizeof(buffer), fp) != NULL)
+    {
+        size_t len = strnlen(buffer, sizeof(buffer));
+        char *printer = malloc(len+1);
+        snprintf(printer, len, "%s", buffer);
+        printers = g_list_prepend(printers, printer);
+    }
+    printers = g_list_reverse(printers);
+
+    fclose(fp);
+    return printers;
+}
+
+cpdb_printer_obj_t *cpdbGetDefaultPrinter(cpdb_frontend_obj_t *f)
+{
+    if (f->num_printers == 0 || f->num_backends == 0)
+    {
+        CPDB_DEBUG_LOG("No printers found", "", CPDB_DEBUG_LEVEL_WARN);
+        return NULL;
+    }
+    
+    gpointer key, value;
+    GHashTableIter iter;
+    char *printer_id, *backend_name;
+    cpdb_printer_obj_t *default_printer = NULL;
+    GList *printer, *user_printers, *system_printers, *printers = NULL;
+    
+    /** Find a default printer from user config first, before trying system wide config **/
+    user_printers = cpdbLoadDefaultPrinters(CPDB_USER_DEFAULT_PRINTERS);
+    if (user_printers)
+        printers = g_list_concat(printers, user_printers);
+    system_printers = cpdbLoadDefaultPrinters(CPDB_SYSTEM_DEFAULT_PRINTERS);
+    if (system_printers)
+        printers = g_list_concat(printers, system_printers);
+    
+    for (printer = printers; printer != NULL; printer = printer->next)
+    {
+        printer_id = strtok(printer->data, "#"); 
+        backend_name = strtok(NULL, "\n");
+
+        default_printer = cpdbFindPrinterObj(f, printer_id, backend_name);
+        if (default_printer)
+        {
+            g_list_free_full(printers, free);
+            return default_printer;
+        }
+    }
+    if (printers)
+        g_list_free_full(printers, free);
+
+    CPDB_DEBUG_LOG("Couldn't find a valid default printer", "", CPDB_DEBUG_LEVEL_WARN);
+
+    /**  Fallback to default CUPS printer if CUPS backend exists **/
+    printer_id = cpdbGetDefaultPrinterForBackend(f, "CUPS");
+    default_printer = cpdbFindPrinterObj(f, printer_id, "CUPS");
+    if (default_printer)
+        return default_printer;
+    CPDB_DEBUG_LOG("Couldn't find a valid default CUPS printer", "", CPDB_DEBUG_LEVEL_WARN);
+    
+    /** Fallback to default FILE printer if FILE backend exists **/
+    printer_id = cpdbGetDefaultPrinterForBackend(f, "FILE");
+    default_printer = cpdbFindPrinterObj(f, printer_id, "FILE");
+    if (default_printer)
+        return default_printer;
+    CPDB_DEBUG_LOG("Couldn't find a valid default FILE printer", "", CPDB_DEBUG_LEVEL_WARN);
+    
+    /** Fallback to default printer of first backend found **/
+    g_hash_table_iter_init(&iter, f->backend);
+    g_hash_table_iter_next(&iter, &key, &value);
+
+    backend_name = (char *) key;
+    printer_id = cpdbGetDefaultPrinterForBackend(f, backend_name);
+    default_printer = cpdbFindPrinterObj(f, printer_id, backend_name);
+    if (default_printer)
+        return default_printer;
+    CPDB_DEBUG_LOG("Couldn't find a valid backend", "", CPDB_DEBUG_LEVEL_WARN);
+    
+    /** Fallback to first printer found **/
+    g_hash_table_iter_init(&iter, f->printer);
+    g_hash_table_iter_next(&iter, &key, &value);
+    default_printer = (cpdb_printer_obj_t *) value;
+    
+    return default_printer;
+}
+
+int cpdbMakeUserDefault(cpdb_printer_obj_t *p)
+{
+    char *printer_data;
+    GList *printer, *next, *printers;
+    
+    printer_data = malloc(strlen(p->id) + strlen(p->backend_name) + 2);
+    sprintf(printer_data, "%s#%s", p->id, p->backend_name);
+    printers = cpdbLoadDefaultPrinters(CPDB_USER_DEFAULT_PRINTERS);
+    
+    char *path = cpdbGetAbsolutePath(CPDB_USER_DEFAULT_PRINTERS);
+    FILE *fp = fopen(path, "w");
+    if (fp == NULL)
+    {
+        CPDB_DEBUG_LOG("Couldn't open file for writing", path, CPDB_DEBUG_LEVEL_ERR);
+        return 0;
+    }
+
+    /** Delete duplicate entries **/
+    printer = printers;
+    while (printer != NULL)
+    {
+        next = printer->next;
+        if (strcmp(printer->data, printer_data) == 0)
+        {
+            free(printer->data);
+            printers = g_list_delete_link(printers, printer);
+        }
+
+        printer = next;
+    }
+
+    printers = g_list_prepend(printers, printer_data);
+    for (printer = printers; printer != NULL; printer = printer->next)
+    {
+        fprintf(fp, "%s\n", printer->data);
+    }
+    g_list_free_full(printers, free);
+
+    fclose(fp);
+    return 1;
+}
+
+int cpdbMakeSystemDefault(cpdb_printer_obj_t *p)
+{
+    char *printer_data;
+    GList *printer, *next, *printers;
+
+    printer_data = malloc(strlen(p->id) + strlen(p->backend_name) + 2);
+    sprintf(printer_data, "%s#%s", p->id, p->backend_name);
+    printers = cpdbLoadDefaultPrinters(CPDB_SYSTEM_DEFAULT_PRINTERS);
+
+    char *path = cpdbGetAbsolutePath(CPDB_SYSTEM_DEFAULT_PRINTERS);
+    FILE *fp = fopen(path, "w");
+    if (fp == NULL)
+    {
+        CPDB_DEBUG_LOG("Couldn't open file for writing", path, CPDB_DEBUG_LEVEL_ERR);
+        return 0;
+    }
+
+    /** Delete duplicate entries **/
+    printer = printers;
+    while (printer != NULL)
+    {
+        next = printer->next;
+        if (strcmp(printer->data, printer_data) == 0)
+        {
+            free(printer->data);
+            printers = g_list_delete_link(printers, printer);
+        }
+
+        printer = next;
+    }
+
+    printers = g_list_prepend(printers, printer_data);
+    for (printer = printers; printer != NULL; printer = printer->next)
+    {
+        fprintf(fp, "%s\n", printer->data);
+    }
+    g_list_free_full(printers, free);
+
+    fclose(fp);
+    return 1;
+}
+
 int cpdbGetAllJobs(cpdb_frontend_obj_t *f, cpdb_job_t **j, gboolean active_only)
 {
     
@@ -355,141 +538,6 @@ int cpdbGetAllJobs(cpdb_frontend_obj_t *f, cpdb_job_t **j, gboolean active_only)
 
     *j = jobs;
     return total_jobs;
-}
-
-GList *cpdbLoadDefaultPrinters()
-{
-    char *path = cpdbGetAbsolutePath("~/.CPD-default-printers");
-    FILE *fp = fopen(path, "r");
-
-    if (fp == NULL)
-    {
-        CPDB_DEBUG_LOG("Couldn't open file for reading", path, CPDB_DEBUG_LEVEL_WARN);
-        return NULL;
-    }
-
-    char buffer[512];
-    GList *printers = NULL;
-
-    while (fgets(buffer, sizeof(buffer), fp) != NULL)
-    {
-        size_t len = strnlen(buffer, sizeof(buffer));
-        char *printer = malloc(len+1);
-        snprintf(printer, len, "%s", buffer);
-        printers = g_list_prepend(printers, printer);
-    }
-    printers = g_list_reverse(printers);
-
-    fclose(fp);
-    return printers;
-}
-
-void cpdbMakeDefaultPrinter(cpdb_printer_obj_t *p)
-{
-    char *printer_data;
-    GList *printer, *next, *printers;
-
-    printer_data = malloc(strlen(p->id) + strlen(p->backend_name) + 2);
-    sprintf(printer_data, "%s#%s", p->id, p->backend_name);
-    printers = cpdbLoadDefaultPrinters();
-
-    printer = printers;
-    while (printer != NULL)
-    {
-        next = printer->next;
-        if (strcmp(printer->data, printer_data) == 0)
-        {
-            free(printer->data);
-            printers = g_list_delete_link(printers, printer);
-        }
-
-        printer = next;
-    }
-
-    printers = g_list_prepend(printers, printer_data);
-
-    char *path = cpdbGetAbsolutePath("~/.CPD-default-printers");
-    FILE *fp = fopen(path, "w");
-    if (fp)
-    {
-        for (printer = printers; printer != NULL; printer = printer->next)
-        {
-            fprintf(fp, "%s\n", printer->data);
-        }
-
-        fclose(fp);
-    }
-    else
-    {
-        CPDB_DEBUG_LOG("Couldn't open file for writing", path, CPDB_DEBUG_LEVEL_ERR);
-    }
-
-    g_list_free_full(printers, free);
-}
-
-cpdb_printer_obj_t *cpdbGetDefaultPrinter(cpdb_frontend_obj_t *f)
-{
-    if (f->num_printers == 0 || f->num_backends == 0)
-    {
-        CPDB_DEBUG_LOG("No printers found", "", CPDB_DEBUG_LEVEL_WARN);
-        return NULL;
-    }
-    
-    GList *printer, *printers;
-    GHashTableIter iter;
-    gpointer key, value;
-    char *printer_id, *backend_name;
-    cpdb_printer_obj_t *default_printer = NULL;
-
-    printers = cpdbLoadDefaultPrinters(f);
-    for (printer = printers; printer != NULL; printer = printer->next)
-    {
-        printer_id = strtok(printer->data, "#"); 
-        backend_name = strtok(NULL, "\n");
-
-        default_printer = cpdbFindPrinterObj(f, printer_id, backend_name);
-        if (default_printer)
-        {
-            g_list_free_full(printers, free);
-            return default_printer;
-        }
-    }
-    if (printers)
-        g_list_free_full(printers, free);
-
-    CPDB_DEBUG_LOG("Couldn't find a valid default printer", "", CPDB_DEBUG_LEVEL_WARN);
-
-    /**  Fallback to default CUPS printer if CUPS backend exists **/
-    printer_id = cpdbGetDefaultPrinterForBackend(f, "CUPS");
-    default_printer = cpdbFindPrinterObj(f, printer_id, "CUPS");
-    if (default_printer)
-        return default_printer;
-    CPDB_DEBUG_LOG("Couldn't find a valid default CUPS printer", "", CPDB_DEBUG_LEVEL_WARN);
-    
-    /** Fallback to default FILE printer if FILE backend exists **/
-    printer_id = cpdbGetDefaultPrinterForBackend(f, "FILE");
-    default_printer = cpdbFindPrinterObj(f, printer_id, "FILE");
-    if (default_printer)
-        return default_printer;
-    CPDB_DEBUG_LOG("Couldn't find a valid default FILE printer", "", CPDB_DEBUG_LEVEL_WARN);
-    
-    /** Fallback to default printer of first backend found **/
-    g_hash_table_iter_init(&iter, f->backend);
-    g_hash_table_iter_next(&iter, &key, &value);
-
-    backend_name = (char *) key;
-    printer_id = cpdbGetDefaultPrinterForBackend(f, backend_name);
-    default_printer = cpdbFindPrinterObj(f, printer_id, backend_name);
-    if (default_printer)
-        return default_printer;
-    CPDB_DEBUG_LOG("Couldn't find a valid backend", "", CPDB_DEBUG_LEVEL_WARN);
-    
-    /** Fallback to first printer found **/
-    g_hash_table_iter_init(&iter, f->printer);
-    g_hash_table_iter_next(&iter, &key, &value);
-    default_printer = (cpdb_printer_obj_t *) value;
-    
-    return default_printer;
 }
 
 /**

@@ -394,20 +394,20 @@ cpdb_printer_obj_t *cpdbGetDefaultPrinter(cpdb_frontend_obj_t *f)
     return default_printer;
 }
 
-int cpdbMakeUserDefault(cpdb_printer_obj_t *p)
+int cpdbSetDefaultPrinter(char *path, cpdb_printer_obj_t *p)
 {
     char *printer_data;
     GList *printer, *next, *printers;
     
     printer_data = malloc(strlen(p->id) + strlen(p->backend_name) + 2);
     sprintf(printer_data, "%s#%s", p->id, p->backend_name);
-    printers = cpdbLoadDefaultPrinters(CPDB_USER_DEFAULT_PRINTERS);
+    printers = cpdbLoadDefaultPrinters(path);
     
-    char *path = cpdbGetAbsolutePath(CPDB_USER_DEFAULT_PRINTERS);
-    FILE *fp = fopen(path, "w");
+    char *absolutePath = cpdbGetAbsolutePath(path);
+    FILE *fp = fopen(absolutePath, "w");
     if (fp == NULL)
     {
-        CPDB_DEBUG_LOG("Couldn't open file for writing", path, CPDB_DEBUG_LEVEL_ERR);
+        CPDB_DEBUG_LOG("Couldn't open file for writing", absolutePath, CPDB_DEBUG_LEVEL_ERR);
         return 0;
     }
 
@@ -436,46 +436,14 @@ int cpdbMakeUserDefault(cpdb_printer_obj_t *p)
     return 1;
 }
 
-int cpdbMakeSystemDefault(cpdb_printer_obj_t *p)
+int cpdbSetUserDefaultPrinter(cpdb_printer_obj_t *p)
 {
-    char *printer_data;
-    GList *printer, *next, *printers;
+    return cpdbSetDefaultPrinter(CPDB_USER_DEFAULT_PRINTERS, p);
+}
 
-    printer_data = malloc(strlen(p->id) + strlen(p->backend_name) + 2);
-    sprintf(printer_data, "%s#%s", p->id, p->backend_name);
-    printers = cpdbLoadDefaultPrinters(CPDB_SYSTEM_DEFAULT_PRINTERS);
-
-    char *path = cpdbGetAbsolutePath(CPDB_SYSTEM_DEFAULT_PRINTERS);
-    FILE *fp = fopen(path, "w");
-    if (fp == NULL)
-    {
-        CPDB_DEBUG_LOG("Couldn't open file for writing", path, CPDB_DEBUG_LEVEL_ERR);
-        return 0;
-    }
-
-    /** Delete duplicate entries **/
-    printer = printers;
-    while (printer != NULL)
-    {
-        next = printer->next;
-        if (strcmp(printer->data, printer_data) == 0)
-        {
-            free(printer->data);
-            printers = g_list_delete_link(printers, printer);
-        }
-
-        printer = next;
-    }
-
-    printers = g_list_prepend(printers, printer_data);
-    for (printer = printers; printer != NULL; printer = printer->next)
-    {
-        fprintf(fp, "%s\n", printer->data);
-    }
-    g_list_free_full(printers, free);
-
-    fclose(fp);
-    return 1;
+int cpdbSetSystemDefaultPrinter(cpdb_printer_obj_t *p)
+{
+    return cpdbSetDefaultPrinter(CPDB_SYSTEM_DEFAULT_PRINTERS, p);
 }
 
 int cpdbGetAllJobs(cpdb_frontend_obj_t *f, cpdb_job_t **j, gboolean active_only)

@@ -168,7 +168,7 @@ cpdb_printer_obj_t *cpdbFindPrinterObj(cpdb_frontend_obj_t *, const char *printe
 char *cpdbGetDefaultPrinterForBackend(cpdb_frontend_obj_t *, const char *backend_name);
 
 /**
- * Returns a GList of all default printers in the config file
+ * Returns a GList of all default printers in given config file
  *
  * @param path : Relative path of the config file with default printers
  *
@@ -183,20 +183,30 @@ GList *cpdbLoadDefaultPrinters(char *path);
 cpdb_printer_obj_t *cpdbGetDefaultPrinter(cpdb_frontend_obj_t *);
 
 /**
- * Mark a printer as user default
- * Takes care of duplicate entries in the config file
+ * Set a printer as default in the given config file
+ * 
+ * @param path : Relative path of the config file with default printers
+ * @param p : PrinterObj to mark as default
  *
  * @returns : 1 on success, 0 on failure
  */
-int cpdbMakeUserDefault(cpdb_printer_obj_t *p);
+int cpdbSetDefaultPrinter(char *path, cpdb_printer_obj_t *p);
 
 /**
- * Mark a printer as system wide defualt
+ * Set a printer as user default
  * Takes care of duplicate entries in the config file
  *
  * @returns : 1 on success, 0 on failure
  */
-int cpdbMakeSystemDefault(cpdb_printer_obj_t *p);
+int cpdbSetUserDefaultPrinter(cpdb_printer_obj_t *p);
+
+/**
+ * Set a printer as system wide default
+ * Takes care of duplicate entries in the config file
+ *
+ * @returns : 1 on success, 0 on failure
+ */
+int cpdbSetSystemDefaultPrinter(cpdb_printer_obj_t *p);
 
 /**
  * Get the list of (all/active) jobs from all the backends

@@ -428,7 +428,7 @@ int cpdbSetDefaultPrinter(char *path, cpdb_printer_obj_t *p)
     printers = g_list_prepend(printers, printer_data);
     for (printer = printers; printer != NULL; printer = printer->next)
     {
-        fprintf(fp, "%s\n", printer->data);
+        fprintf(fp, "%s\n", (char *)printer->data);
     }
     g_list_free_full(printers, free);
 

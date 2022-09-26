@@ -1,6 +1,8 @@
 #ifndef _CPDB_H_
 #define _CPDB_H_
 
+#include <glib.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -10,7 +12,6 @@ extern "C" {
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
-#include <glib.h>
 #include <sys/types.h>
 #include <pwd.h>
 #include <cpdb/backend-interface.h>

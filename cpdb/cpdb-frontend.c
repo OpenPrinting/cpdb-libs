@@ -326,7 +326,7 @@ cpdb_printer_obj_t *cpdbGetDefaultPrinter(cpdb_frontend_obj_t *f)
 {
     if (f->num_printers == 0 || f->num_backends == 0)
     {
-        CPDB_DEBUG_LOG("No printers found", "", CPDB_DEBUG_LEVEL_WARN);
+        CPDB_DEBUG_LOG("No printers found while obtaining default printer", "", CPDB_DEBUG_LEVEL_WARN);
         return NULL;
     }
     
@@ -577,6 +577,8 @@ char *cpdbGetState(cpdb_printer_obj_t *p)
 
 cpdb_options_t *cpdbGetAllOptions(cpdb_printer_obj_t *p)
 {
+    if (!p) return NULL;
+
     /** 
      * If the options were previously queried, 
      * return them, instead of querying again.
@@ -604,6 +606,8 @@ cpdb_options_t *cpdbGetAllOptions(cpdb_printer_obj_t *p)
 
 cpdb_option_t *cpdbGetOption(cpdb_printer_obj_t *p, const char *name)
 {
+    if (!p || !name) return NULL;
+
     cpdbGetAllOptions(p);
     if (!g_hash_table_contains(p->options->table, name))
         return NULL;
@@ -612,6 +616,8 @@ cpdb_option_t *cpdbGetOption(cpdb_printer_obj_t *p, const char *name)
 
 char *cpdbGetDefault(cpdb_printer_obj_t *p, const char *name)
 {
+    if (!p || !name) return NULL;
+
     cpdb_option_t *o = cpdbGetOption(p, name);
     if (!o)
         return NULL;
@@ -620,6 +626,8 @@ char *cpdbGetDefault(cpdb_printer_obj_t *p, const char *name)
 
 char *cpdbGetSetting(cpdb_printer_obj_t *p, const char *name)
 {
+    if (!p || !name) return NULL;
+
     if (!g_hash_table_contains(p->settings->table, name))
         return NULL;
     return g_hash_table_lookup(p->settings->table, name);
@@ -679,6 +687,8 @@ char *cpdbPrintFilePath(cpdb_printer_obj_t *p, const char *file_path, const char
 }
 void cpdbAddSettingToPrinter(cpdb_printer_obj_t *p, const char *name, const char *val)
 {
+    if (!p) return;
+
     cpdbAddSetting(p->settings, name, val);
 }
 gboolean cpdbClearSettingFromPrinter(cpdb_printer_obj_t *p, const char *name)
@@ -818,38 +828,35 @@ char *cpdbGetHumanReadableChoiceName(cpdb_printer_obj_t *p, const char *option_n
 
 cpdb_media_t *cpdbGetMedia(cpdb_printer_obj_t *p, const char *media)
 {
-	cpdbGetAllOptions(p);
-	
-	return (cpdb_media_t *) g_hash_table_lookup(p->options->media, media);
+    cpdbGetAllOptions(p);
+    return (cpdb_media_t *) g_hash_table_lookup(p->options->media, media);
 }
 
-void cpdbGetMediaSize(cpdb_printer_obj_t *p, const char *media, int *width, int *length)
+int cpdbGetMediaSize(cpdb_printer_obj_t *p, const char *media, int *width, int *length)
 {    
     cpdb_media_t *m = cpdbGetMedia(p, media);
     if (m)
     {
-		*width = m->width;
-		*length = m->length;
-	}
-	else
-	{
-		*width = 0;
-		*length = 0;
-	}
+        *width = m->width;
+        *length = m->length;
+        return 1;
+    }
+
+    return 0;
 }
 
 int cpdbGetMediaMargins(cpdb_printer_obj_t *p, const char *media, cpdb_margin_t **margins)
 {
-	int num_margins = 0;
-	cpdb_media_t *m = cpdbGetMedia(p, media);
-	
-	if (m)
-	{
-		num_margins = m->num_margins;
-		*margins = m->margins;
-	}
-	
-	return num_margins;	
+    int num_margins = 0;
+    cpdb_media_t *m = cpdbGetMedia(p, media);
+
+    if (m)
+    {
+        num_margins = m->num_margins;
+        *margins = m->margins;
+    }
+
+    return num_margins;	
 }
 
 void acquire_details_cb(PrintBackend *proxy, GAsyncResult *res, gpointer user_data)
@@ -910,6 +917,8 @@ cpdb_settings_t *cpdbGetNewSettings()
 
 void cpdbCopySettings(const cpdb_settings_t *source, cpdb_settings_t *dest)
 {
+    if (!source || !dest) return;
+
     GHashTableIter iter;
     g_hash_table_iter_init(&iter, source->table);
     gpointer key, value;
@@ -920,6 +929,8 @@ void cpdbCopySettings(const cpdb_settings_t *source, cpdb_settings_t *dest)
 }
 void cpdbAddSetting(cpdb_settings_t *s, const char *name, const char *val)
 {
+    if (!s || !name) return;
+
     char *prev = g_hash_table_lookup(s->table, name);
     if (prev)
     {
@@ -938,6 +949,8 @@ void cpdbAddSetting(cpdb_settings_t *s, const char *name, const char *val)
 
 gboolean cpdbClearSetting(cpdb_settings_t *s, const char *name)
 {
+    if (!s || !name) return FALSE;
+
     if (g_hash_table_contains(s->table, name))
     {
         g_hash_table_remove(s->table, name);

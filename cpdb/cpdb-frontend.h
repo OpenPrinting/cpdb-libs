@@ -406,14 +406,18 @@ cpdb_media_t *cpdbGetMedia(cpdb_printer_obj_t *p, const char *media);
  * @param media : name of media-size
  * @param width : address of width of media-size to be returned
  * @param length : address of length of media-size to be returned
+ *
+ * @returns : 1 on success, 0 on failure
  */
-void cpdbGetMediaSize(cpdb_printer_obj_t *p, const char *media, int *width, int *length);
+int cpdbGetMediaSize(cpdb_printer_obj_t *p, const char *media, int *width, int *length);
 
 /**
  * Find the margins for a given media-size
  *
  * @param media : name of media-size
  * @param margins : margins array
+ *
+ * @returns : number of set of margins supported by given media size
  */
 int cpdbGetMediaMargins(cpdb_printer_obj_t *p, const char *media, cpdb_margin_t **margins);
 

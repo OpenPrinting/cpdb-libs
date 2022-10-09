@@ -22,10 +22,10 @@ static int remove_printer_callback(cpdb_printer_obj_t *p)
 
 static void acquire_details_callback(cpdb_printer_obj_t *p, int success, void *user_data)
 {
-	if (success)
-		g_message("Details acquired for %s : %s\n", p->name, p->backend_name);
-	else
-		g_message("Could not acquire printer details for %s : %s\n", p->name, p->backend_name);
+    if (success)
+        g_message("Details acquired for %s : %s\n", p->name, p->backend_name);
+    else
+        g_message("Could not acquire printer details for %s : %s\n", p->name, p->backend_name);
 }
 
 int main(int argc, char **argv)
@@ -40,7 +40,7 @@ int main(int argc, char **argv)
         f = cpdbGetNewFrontendObj(NULL, add_cb, rem_cb);
 
     /** Uncomment the line below if you don't want to use the previously saved settings**/
-    //cpdbIgnoreLastSavedSettings(f);
+    cpdbIgnoreLastSavedSettings(f);
     g_thread_new("parse_commands_thread", parse_commands, NULL);
     cpdbConnectToDBus(f);
     GMainLoop *loop = g_main_loop_new(NULL, FALSE);
@@ -319,25 +319,26 @@ gpointer parse_commands(gpointer user_data)
             int width, length;
             scanf("%s%s%s", media, printer_id, backend_name);
             cpdb_printer_obj_t *p = cpdbFindPrinterObj(f, printer_id, backend_name);
-            cpdbGetMediaSize(p, media, &width, &length);
-            printf("%dx%d\n", width, length);
+            int ok = cpdbGetMediaSize(p, media, &width, &length);
+            if (ok)
+                printf("%dx%d\n", width, length);
         }
         else if (strcmp(buf, "get-media-margins") == 0)
         {
-			char printer_id[100];
-			char backend_name[100];
-			char media[100];
-			scanf("%s%s%s", media, printer_id, backend_name);
-			cpdb_printer_obj_t *p = cpdbFindPrinterObj(f, printer_id, backend_name);
-			
-			cpdb_margin_t *margins;
-			int num_margins = cpdbGetMediaMargins(p, media, &margins);
-			for (int i = 0; i < num_margins; i++)
-				printf("%d %d %d %d\n", margins[i].left, margins[i].right, margins[i].top, margins[i].bottom);
-		}
+            char printer_id[100];
+            char backend_name[100];
+            char media[100];
+            scanf("%s%s%s", media, printer_id, backend_name);
+            cpdb_printer_obj_t *p = cpdbFindPrinterObj(f, printer_id, backend_name);
+
+            cpdb_margin_t *margins;
+            int num_margins = cpdbGetMediaMargins(p, media, &margins);
+            for (int i = 0; i < num_margins; i++)
+                printf("%d %d %d %d\n", margins[i].left, margins[i].right, margins[i].top, margins[i].bottom);
+        }
         else if (strcmp(buf, "acquire-details") == 0)
         {
-			char printer_id[100];
+            char printer_id[100];
             char backend_name[100];
             scanf("%s%s", printer_id, backend_name);
             
@@ -345,7 +346,7 @@ gpointer parse_commands(gpointer user_data)
             if(p == NULL)
               continue;
 
-			g_message("Acquiring printer details asynchronously...\n");
+            g_message("Acquiring printer details asynchronously...\n");
             cpdbAcquireDetails(p, acquire_details_callback, NULL);
 		}
     }
@@ -372,7 +373,7 @@ void display_help()
     printf("%s\n", "is-accepting-jobs <printer id> <backend name(like \"CUPS\")>");
     printf("%s\n", "cancel-job <job-id> <printer id> <backend name>");
 
-	printf("%s\n", "acquire-details <printer id> <backend name>");
+    printf("%s\n", "acquire-details <printer id> <backend name>");
     printf("%s\n", "get-all-options <printer-name> <backend-name>");
     printf("%s\n", "get-default <option name> <printer id> <backend name>");
     printf("%s\n", "get-setting <option name> <printer id> <backend name>");

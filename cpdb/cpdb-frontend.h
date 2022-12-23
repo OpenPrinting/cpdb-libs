@@ -12,6 +12,7 @@ extern "C"
 #include <string.h>
 #include <stdlib.h>
 #include <dirent.h>
+
 #include <cpdb/cpdb.h>
 
 #define CPDB_DIALOG_BUS_NAME "org.openprinting.PrintFrontend"
@@ -22,10 +23,6 @@ extern "C"
 #define CPDB_PRINT_SETTINGS_FILE   "print-settings"
 #define CPDB_DEFAULT_PRINTERS_FILE "default-printers"
 
-/* Environment variables for printing debug info */
-#define CPDB_DEBUG_LEVEL   "CPDB_DEBUG_LEVEL"
-#define CPDB_DEBUG_LOGFILE "CPDB_DEBUG_LOGFILE"
-
 typedef struct cpdb_frontend_obj_s cpdb_frontend_obj_t;
 typedef struct cpdb_printer_obj_s cpdb_printer_obj_t;
 typedef struct cpdb_async_obj_s cpdb_async_obj_t;
@@ -35,12 +32,6 @@ typedef struct cpdb_option_s cpdb_option_t;
 typedef struct cpdb_margin_s cpdb_margin_t;
 typedef struct cpdb_media_s cpdb_media_t;
 typedef struct cpdb_job_s cpdb_job_t;
-
-typedef enum {
-    CPDB_DEBUG_LEVEL_INFO,
-    CPDB_DEBUG_LEVEL_WARN,
-    CPDB_DEBUG_LEVEL_ERR
-} CpdbDebugLevel;
 
 typedef int (*cpdb_event_callback)(cpdb_printer_obj_t *);
 
@@ -393,6 +384,44 @@ void cpdbPicklePrinterToFile(cpdb_printer_obj_t *p, const char *filename, const 
 cpdb_printer_obj_t *cpdbResurrectPrinterFromFile(const char *filename);
 
 /**
+ * Finds human readable translation of option name
+ * 
+ * @param p : printer object to which option belongs
+ * @param option_name : name of option
+ * @param locale : language for translation
+ * 
+ * @returns
+ * human readable name of option translated to given language
+ */
+char *cpdbGetOptionTranslation(cpdb_printer_obj_t *p, const char *option_name, const char *lang);
+
+/**
+ * Finds human readable translation of choice name
+ * 
+ * @param p : printer object to which option belongs
+ * @param option_name : name of option
+ * @param choice_name : name of choice
+ * @param locale : language for translation
+ * 
+ * @returns
+ * human readable name of choice translated to given language
+ */
+char *cpdbGetChoiceTranslation(cpdb_printer_obj_t *p, const char *option_name,
+                                const char *choice_name, const char *locale);
+
+/**
+ * Finds human readable translation of group name
+ * 
+ * @param p : printer object to which option belongs
+ * @param group_name : name of group
+ * @param locale : locale for translation
+ * 
+ * @returns
+ * human readable name of group translated to given language
+ */
+char *cpdbGetGroupTranslation(cpdb_printer_obj_t *p, const char *group_name, const char *locale);
+
+/**
  * Finds the human readable English name of the setting.
  *
  * @param option_name : name of the setting
@@ -552,6 +581,7 @@ ______________________________________ cpdb_option_t ___________________________
 struct cpdb_option_s
 {
     char *option_name;
+    char *group_name;
     int num_supported;
     char **supported_values;
     char *default_value;
@@ -614,11 +644,6 @@ void cpdbUnpackJobArray(GVariant *var, int num_jobs, cpdb_job_t *jobs, char *bac
  * ________________________________utility functions__________________________
  */
 
-/**
- * Prints debug messages
- */
-void cpdbDebugLog(const char *msg, CpdbDebugLevel msg_lvl);
-void cpdbDebugLog2(const char *msg1, const char *msg2, CpdbDebugLevel msg_lvl);
 /**
  * 'Unpack' (Deserialize) the GVariant returned in cpdbGetAllOptions
  * and fill the cpdb_options_t structure approriately

@@ -1,0 +1,218 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR OpenPrinting
+# This file is distributed under the same license as the cpdb-libs package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: cpdb-libs 2.0b1\n"
+"Report-Msgid-Bugs-To: https://github.com/OpenPrinting/cpdb-libs/issues\n"
+"POT-Creation-Date: 2022-12-26 23:38+0530\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: cpdb/cpdb.h:88
+msgid "Media"
+msgstr ""
+
+#: cpdb/cpdb.h:89
+msgid "Copies"
+msgstr ""
+
+#: cpdb/cpdb.h:90
+msgid "Scaling"
+msgstr ""
+
+#: cpdb/cpdb.h:91
+msgid "Ouput Quality"
+msgstr ""
+
+#: cpdb/cpdb.h:92
+msgid "Advanced"
+msgstr ""
+
+#: cpdb/cpdb.h:93
+msgid "Job Management"
+msgstr ""
+
+#: cpdb/cpdb.h:94
+msgid "Page Management"
+msgstr ""
+
+#: cpdb/cpdb.h:95
+msgid "Finishing"
+msgstr ""
+
+#: cpdb/cpdb.h:104
+msgid "copies"
+msgstr ""
+
+#: cpdb/cpdb.h:105
+msgid "job-hold-until"
+msgstr ""
+
+#: cpdb/cpdb.h:106
+msgid "job-name"
+msgstr ""
+
+#: cpdb/cpdb.h:107
+msgid "job-priority"
+msgstr ""
+
+#: cpdb/cpdb.h:108
+msgid "media"
+msgstr ""
+
+#: cpdb/cpdb.h:109
+msgid "number-up"
+msgstr ""
+
+#: cpdb/cpdb.h:110
+msgid "orientation-requested"
+msgstr ""
+
+#: cpdb/cpdb.h:111
+msgid "printer-resolution"
+msgstr ""
+
+#: cpdb/cpdb.h:112
+msgid "print-color-mode"
+msgstr ""
+
+#: cpdb/cpdb.h:113
+msgid "sides"
+msgstr ""
+
+#: cpdb/cpdb.h:116
+msgid "color"
+msgstr ""
+
+#: cpdb/cpdb.h:117
+msgid "monochrome"
+msgstr ""
+
+#: cpdb/cpdb.h:118
+msgid "auto"
+msgstr ""
+
+#: cpdb/cpdb.h:120
+msgid "draft"
+msgstr ""
+
+#: cpdb/cpdb.h:121
+msgid "normal"
+msgstr ""
+
+#: cpdb/cpdb.h:122 cpdb/cpdb.h:132
+msgid "high"
+msgstr ""
+
+#: cpdb/cpdb.h:124
+msgid "one-sided"
+msgstr ""
+
+#: cpdb/cpdb.h:125
+msgid "two-sided-short"
+msgstr ""
+
+#: cpdb/cpdb.h:126
+msgid "two-sided-long"
+msgstr ""
+
+#: cpdb/cpdb.h:128
+msgid "portrait"
+msgstr ""
+
+#: cpdb/cpdb.h:129
+msgid "landscape"
+msgstr ""
+
+#: cpdb/cpdb.h:131
+msgid "urgent"
+msgstr ""
+
+#: cpdb/cpdb.h:133
+msgid "medium"
+msgstr ""
+
+#: cpdb/cpdb.h:134
+msgid "low"
+msgstr ""
+
+#: cpdb/cpdb.h:136
+msgid "idle"
+msgstr ""
+
+#: cpdb/cpdb.h:137
+msgid "printing"
+msgstr ""
+
+#: cpdb/cpdb.h:138
+msgid "stopped"
+msgstr ""
+
+#: cpdb/cpdb.h:140
+msgid "StopListing"
+msgstr ""
+
+#: cpdb/cpdb.h:141
+msgid "RefreshBackend"
+msgstr ""
+
+#: cpdb/cpdb.h:142
+msgid "PrinterAdded"
+msgstr ""
+
+#: cpdb/cpdb.h:143
+msgid "PrinterRemoved"
+msgstr ""
+
+#: cpdb/cpdb.h:144
+msgid "HideRemotePrinters"
+msgstr ""
+
+#: cpdb/cpdb.h:145
+msgid "UnhideRemotePrinters"
+msgstr ""
+
+#: cpdb/cpdb.h:146
+msgid "HideTemporaryPrinters"
+msgstr ""
+
+#: cpdb/cpdb.h:147
+msgid "UnhideTemporaryPrinters"
+msgstr ""
+
+#: cpdb/cpdb.h:149
+msgid "Aborted"
+msgstr ""
+
+#: cpdb/cpdb.h:150
+msgid "Cancelled"
+msgstr ""
+
+#: cpdb/cpdb.h:151
+msgid "Completed"
+msgstr ""
+
+#: cpdb/cpdb.h:152
+msgid "Held"
+msgstr ""
+
+#: cpdb/cpdb.h:153
+msgid "Pending"
+msgstr ""
+
+#: cpdb/cpdb.h:154
+msgid "Printing"
+msgstr ""
+
+#: cpdb/cpdb.h:155
+msgid "Stopped"
+msgstr ""

@@ -14,7 +14,6 @@ libcpdb_la_CPPFLAGS  = $(GLIB_CFLAGS)
 libcpdb_la_CPPFLAGS += $(GIO_CFLAGS)
 libcpdb_la_CPPFLAGS += $(GIOUNIX_CFLAGS)
 libcpdb_la_CPPFLAGS += -I..
-libcpdb_la_CPPFLAGS += -DCPDB_SYSCONFDIR=\"@CPDB_SYSCONFDIR@\"
 
 libcpdb_la_LIBADD  = $(GLIB_LIBS)
 libcpdb_la_LIBADD += $(GIO_LIBS)
@@ -30,7 +29,6 @@ libcpdb_frontend_la_CPPFLAGS  = $(GLIB_CFLAGS)
 libcpdb_frontend_la_CPPFLAGS += $(GIO_CFLAGS)
 libcpdb_frontend_la_CPPFLAGS += $(GIOUNIX_CFLAGS)
 libcpdb_frontend_la_CPPFLAGS += -I..
-libcpdb_frontend_la_CPPFLAGS += -DCPDB_BACKEND_INFO_DIR=\"@CPDB_BACKEND_INFO_DIR@\"
 
 libcpdb_frontend_la_LIBADD  = -lpthread -lm -lcrypt
 libcpdb_frontend_la_LIBADD += $(GLIB_LIBS)

@@ -1,13 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <glib.h>
 #include <string.h>
+#include <locale.h>
+
+#include <glib.h>
+#include <libintl.h>
 
 #include <cpdb/frontend.h>
 
 void display_help();
 gpointer parse_commands(gpointer user_data);
 cpdb_frontend_obj_t *f;
+static const char *locale;
 
 static int add_printer_callback(cpdb_printer_obj_t *p)
 {
@@ -33,6 +37,11 @@ int main(int argc, char **argv)
 {
     cpdb_event_callback add_cb = (cpdb_event_callback)add_printer_callback;
     cpdb_event_callback rem_cb = (cpdb_event_callback)remove_printer_callback;
+
+    setlocale (LC_ALL, "");
+    cpdbInit();
+
+    locale = getenv("LANGUAGE");
 
     char *dialog_bus_name = malloc(300);
     if (argc > 1) //this is for creating multiple instances of a dialog simultaneously
@@ -324,6 +333,34 @@ gpointer parse_commands(gpointer user_data)
             cpdb_printer_obj_t *p = cpdbFindPrinterObj(f, printer_id, backend_name);
             cpdbPicklePrinterToFile(p, "/tmp/.printer-pickle", f);
         }
+        else if (strcmp(buf, "get-option-translation") == 0)
+        {
+            char printer_id[100];
+            char backend_name[100];
+            char option_name[100];
+            scanf("%s%s%s", option_name, printer_id, backend_name);
+            cpdb_printer_obj_t *p = cpdbFindPrinterObj(f, printer_id, backend_name);
+            printf("%s\n", cpdbGetOptionTranslation(p, option_name, locale));
+        }
+        else if (strcmp(buf, "get-choice-translation") == 0)
+        {
+            char printer_id[100];
+            char backend_name[100];
+            char option_name[100];
+            char choice_name[100];
+            scanf("%s%s%s%s", option_name, choice_name, printer_id, backend_name);
+            cpdb_printer_obj_t *p = cpdbFindPrinterObj(f, printer_id, backend_name);
+            printf("%s\n", cpdbGetChoiceTranslation(p, option_name, choice_name, locale));
+        }
+        else if (strcmp(buf, "get-group-translation") == 0)
+        {
+            char printer_id[100];
+            char backend_name[100];
+            char group_name[100];
+            scanf("%s%s%s", group_name, printer_id, backend_name);
+            cpdb_printer_obj_t *p = cpdbFindPrinterObj(f, printer_id, backend_name);
+            printf("%s\n", cpdbGetGroupTranslation(p, group_name, locale));
+        }
         else if (strcmp(buf, "get-human-readable-option-name") == 0)
         {
             char printer_id[100];
@@ -414,6 +451,9 @@ void display_help()
     printf("%s\n", "clear-setting <option name> <printer id> <backend name>");
     printf("%s\n", "get-media-size <media> <printer id> <backend name>");
     printf("%s\n", "get-media-margins <media> <printer id> <backend name>");
+    printf("%s\n", "get-option-translation <option> <printer id> <backend name>");
+    printf("%s\n", "get-choice-translation <option> <choice> <printer id> <backend name>");
+    printf("%s\n", "get-group-translation <group> <printer id> <backend name>");
     printf("%s\n", "get-human-readable-option-name <printer id> <backend name> <option name>");
     printf("%s\n", "get-human-readable-choice-name <printer id> <backend name> <option name> <choice name>");
 

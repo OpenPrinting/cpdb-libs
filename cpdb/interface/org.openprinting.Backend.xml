@@ -25,6 +25,25 @@
             <arg name="printer_id" direction="in" type="s"/>
             <arg name="state" direction="out" type="s"/>
         </method>
+        <method name="getOptionTranslation">
+            <arg name="printer_name" direction="in" type="s"/>
+            <arg name="option_name" direction="in" type="s"/>
+            <arg name="locale" direction="in" type="s"/>
+            <arg name="translation" direction="out" type="s"/>
+        </method>
+        <method name="getChoiceTranslation">
+            <arg name="printer_name" direction="in" type="s"/>
+            <arg name="option_name" direction="in" type="s"/>
+            <arg name="choice_name" direction="in" type="s"/>
+            <arg name="locale" direction="in" type="s"/>
+            <arg name="translation" direction="out" type="s"/>
+        </method>
+        <method name="getGroupTranslation">
+            <arg name="printer_name" direction="in" type="s"/>
+            <arg name="group_name" direction="in" type="s"/>
+            <arg name="locale" direction="in" type="s"/>
+            <arg name="translation" direction="out" type="s"/>
+        </method>
         <method name="getHumanReadableOptionName">
             <arg name="option_name" direction="in" type="s"/>
             <arg name="human_readable_name" direction="out" type="s"/>
@@ -41,8 +60,8 @@
         <method name="GetAllOptions">
             <arg name="printer_id" direction="in" type="s" />
             <arg name="num_options" direction="out" type="i" />
-            <arg name="options" direction="out" type="a(ssia(s))" />
-            <!--option contents: option name, default value , number of supported values , array of supported values-->
+            <arg name="options" direction="out" type="a(sssia(s))" />
+            <!--option contents: option name, group name, default value, number of supported values , array of supported values-->
             <arg name="num_media" direction="out" type="i" />
             <arg name="media" direction="out" type="a(siiia(iiii))" />
             <!-- media contents: media name, width, length, number of supported margins, array of margins (left, right, top, bottom) -->

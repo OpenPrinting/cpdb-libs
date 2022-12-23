@@ -10,7 +10,14 @@ gmon.out
 autoscan.log
 aclocal.m4
 autom4te.cache
-build-aux/
+build-aux/ar-lib
+build-aux/compile
+build-aux/depcomp
+build-aux/install-sh
+build-aux/ltmain.sh
+build-aux/missing
+m4/lt*
+m4/libtool.m4
 config.*
 configure
 libtool

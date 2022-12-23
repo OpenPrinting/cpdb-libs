@@ -17,7 +17,7 @@ cpdb_frontend_obj_t *cpdbGetNewFrontendObj(char *instance_name,
     f->skeleton = print_frontend_skeleton_new();
     f->connection = NULL;
     if (instance_name == NULL)
-      f->bus_name = cpdbGetStringCopy(CPDB_DIALOG_BUS_NAME);
+        f->bus_name = cpdbGetStringCopy(CPDB_DIALOG_BUS_NAME);
     else
         f->bus_name = cpdbConcat(CPDB_DIALOG_BUS_NAME, instance_name);
     f->add_cb = add_cb;
@@ -1172,6 +1172,94 @@ cpdb_printer_obj_t *cpdbResurrectPrinterFromFile(const char *filename)
     return p;
 }
 
+char *cpdbGetOptionTranslation(cpdb_printer_obj_t *p,
+                               const char *option_name,
+                               const char *locale)
+{
+    char *translation;
+    GError *error = NULL;
+    
+    print_backend_call_get_option_translation_sync(p->backend_proxy,
+                                                   p->id,
+                                                   option_name,
+                                                   locale,
+                                                   &translation,
+                                                   NULL,
+                                                   &error);
+    if (error)
+    {
+        cpdbDebugPrintf(CPDB_DEBUG_LEVEL_ERR,
+                        "Error getting translation : %s\n",
+                        error->message);
+        cpdbDebugPrintf(CPDB_DEBUG_LEVEL_ERR,
+                        "option: %s, locale: %s\n",
+                        option_name, locale);
+        return NULL;
+    }
+    
+    return cpdbGetStringCopy(translation);
+}
+
+char *cpdbGetChoiceTranslation(cpdb_printer_obj_t *p,
+                               const char *option_name,
+                               const char *choice_name,
+                               const char *locale)
+{
+    char *translation;
+    GError *error = NULL;
+    
+    print_backend_call_get_choice_translation_sync(p->backend_proxy,
+                                                   p->id,
+                                                   option_name,
+                                                   choice_name,
+                                                   locale,
+                                                   &translation,
+                                                   NULL,
+                                                   &error);
+    if (error)
+    {
+        cpdbDebugPrintf(CPDB_DEBUG_LEVEL_ERR,
+                        "Error getting translation : %s\n",
+                        error->message);
+        cpdbDebugPrintf(CPDB_DEBUG_LEVEL_ERR,
+                        "option: %s, choice: %s, locale: %s\n",
+                        option_name, choice_name, locale);
+        return NULL;
+    }
+    
+    return cpdbGetStringCopy(translation);
+}
+
+
+char *cpdbGetGroupTranslation(cpdb_printer_obj_t *p,
+                              const char *group_name,
+                              const char *locale)
+{
+    char *translation;
+    GError *error = NULL;
+    
+    print_backend_call_get_group_translation_sync(p->backend_proxy,
+                                                  p->id,
+                                                  group_name,
+                                                  locale,
+                                                  &translation,
+                                                  NULL,
+                                                  &error);
+
+    if (error)
+    {
+        cpdbDebugPrintf(CPDB_DEBUG_LEVEL_ERR,
+                        "Error getting translation : %s\n",
+                        error->message);
+        cpdbDebugPrintf(CPDB_DEBUG_LEVEL_ERR,
+                        "group: %s, locale: %s\n",
+                        group_name, locale);
+        return NULL;
+    }
+
+    return cpdbGetStringCopy(translation);
+}
+
 char *cpdbGetHumanReadableOptionName(cpdb_printer_obj_t *p,
                                      const char *option_name)
 {
@@ -1555,6 +1643,7 @@ void cpdbPrintOption(const cpdb_option_t *opt)
     int i;
     
     printf("[+] %s\n", opt->option_name);
+    printf(" --> GROUP: %s\n", opt->group_name);
     for (i = 0; i < opt->num_supported; i++)
     {
         printf("   * %s\n", opt->supported_values[i]);
@@ -1569,6 +1658,8 @@ void cpdbDeleteOption(cpdb_option_t *opt)
     
     if (opt->option_name)
         free(opt->option_name);
+    if (opt->group_name)
+        free(opt->group_name);
     if (opt->supported_values)
         free(opt->supported_values);
     if (opt->default_value)
@@ -1651,53 +1742,6 @@ void cpdbUnpackJobArray(GVariant *var,
  * ________________________________utility functions__________________________
  */
 
-void cpdbDebugLog(const char *msg,
-                  CpdbDebugLevel msg_lvl)
-{
-    FILE *log_file = NULL;
-    char *env_cdl, *env_cdlf;
-    CpdbDebugLevel dbg_lvl;
-
-    if (msg == NULL)
-        return;
-
-    dbg_lvl = CPDB_DEBUG_LEVEL_ERR;
-    if (env_cdl = getenv("CPDB_DEBUG_LEVEL"))
-    {
-        if (strncasecmp(env_cdl, "info", 4) == 0)
-            dbg_lvl = CPDB_DEBUG_LEVEL_INFO;
-        else if (strncasecmp(env_cdl, "warn", 4) == 0)
-            dbg_lvl = CPDB_DEBUG_LEVEL_WARN;
-    }
-
-    if (env_cdlf = getenv("CPDB_DEBUG_LOGFILE"))
-        log_file = fopen(env_cdlf, "a");
-
-    if (msg_lvl >= dbg_lvl)
-    {
-        if (log_file)
-            fprintf(log_file, "%s\n", msg);
-        else
-            fprintf(stderr, "%s\n", msg);
-    }
-}
-
-void cpdbDebugLog2(const char *msg1,
-                   const char *msg2,
-                   CpdbDebugLevel msg_lvl)
-{
-    if (msg2 == NULL)
-    {
-        cpdbDebugLog(msg1, msg_lvl);
-        return;
-    }
-
-    char *msg = malloc(strlen(msg1) + strlen(msg2) + 3);
-    sprintf(msg, "%s: %s", msg1, msg2);
-    cpdbDebugLog(msg, msg_lvl);
-    free(msg);
-}
-
 void cpdbUnpackOptions(int num_options,
                        GVariant *var,
                        int num_media,
@@ -1709,16 +1753,22 @@ void cpdbUnpackOptions(int num_options,
     char *str;
     GVariantIter *iter;
     GVariantIter *array_iter;
-    char *name, *default_val;
+    char *name, *default_val, *group;
     int num_sup;
-    g_variant_get(var, "a(ssia(s))", &iter);
+    g_variant_get(var, "a(sssia(s))", &iter);
     cpdb_option_t *opt;
     for (i = 0; i < num_options; i++)
     {
         opt = g_new0(cpdb_option_t, 1);
-        g_variant_iter_loop(iter, "(ssia(s))", &name, &default_val,
-                            &num_sup, &array_iter);
+        g_variant_iter_loop(iter,
+                            "(sssia(s))",
+                            &name,
+                            &group,
+                            &default_val,
+                            &num_sup,
+                            &array_iter);
         opt->option_name = cpdbGetStringCopy(name);
+        opt->group_name = cpdbGetStringCopy(group);
         opt->default_value = cpdbGetStringCopy(default_val);
         opt->num_supported = num_sup;
         opt->supported_values = cpdbNewCStringArray(num_sup);

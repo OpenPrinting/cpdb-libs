@@ -45,6 +45,9 @@ const char *cpdbGroupTable[][2] = {
     
 };
 
+static void cpdbDebugLog(CpdbDebugLevel msg_lvl, const char *msg);
+
+
 void cpdbInit()
 {
     if (!initialized)
@@ -269,8 +272,7 @@ char *cpdbGetGroup(const char *option_name)
 {
     if (option_name == NULL)
     {
-        cpdbDebugLog("Invalid params: cpdbGetCommonGroup()",
-                     CPDB_DEBUG_LEVEL_WARN);
+        cpdbDebugLog(CPDB_DEBUG_LEVEL_WARN, "Invalid params: cpdbGetCommonGroup()\n");
         return NULL;
     }
 
@@ -296,61 +298,75 @@ char *cpdbGetGroupTranslation2(const char *group_name, const char *lang)
     return cpdbGetStringCopy(_(group_name));
 }
 
-void cpdbDebugLog(const char *msg,
-                  CpdbDebugLevel msg_lvl)
+static void cpdbDebugLog(CpdbDebugLevel msg_lvl, const char *msg)
 {
-    FILE *log_file = NULL;
+    FILE *log_file = NULL, *out;
     char *env_cdl, *env_cdlf;
     CpdbDebugLevel dbg_lvl;
 
     if (msg == NULL)
         return;
 
-    dbg_lvl = CPDB_DEBUG_LEVEL_ERR;
-    if (env_cdl = getenv("CPDB_DEBUG_LEVEL"))
+    dbg_lvl = CPDB_DEBUG_LEVEL_ERROR;
+    if (env_cdl = getenv(CPDB_DEBUG_LEVEL))
     {
-        if (strncasecmp(env_cdl, "info", 4) == 0)
+		if (strncasecmp(env_cdl, "debug", 5) == 0)
+			dbg_lvl = CPDB_DEBUG_LEVEL_DEBUG;
+        else if (strncasecmp(env_cdl, "info", 4) == 0)
             dbg_lvl = CPDB_DEBUG_LEVEL_INFO;
         else if (strncasecmp(env_cdl, "warn", 4) == 0)
             dbg_lvl = CPDB_DEBUG_LEVEL_WARN;
     }
-
-    if (env_cdlf = getenv("CPDB_DEBUG_LOGFILE"))
-        log_file = fopen(env_cdlf, "a");
-
-    if (msg_lvl >= dbg_lvl)
+    if (msg_lvl < dbg_lvl)
+		return;
+    
+    out = stderr;
+    if (env_cdlf = getenv(CPDB_DEBUG_LOGFILE))
     {
-        if (log_file)
-            fprintf(log_file, "%s\n", msg);
-        else
-            fprintf(stderr, "%s\n", msg);
-    }
+        if ((log_file = fopen(env_cdlf, "a")) != NULL)
+			out = log_file;
+	}
+
+	switch(msg_lvl)
+	{
+		case CPDB_DEBUG_LEVEL_DEBUG:
+			fprintf(out, "[Debug] %s", msg);
+			break;
+		case CPDB_DEBUG_LEVEL_INFO:
+			fprintf(out, "[Info] %s", msg);
+			break;
+		case CPDB_DEBUG_LEVEL_WARN:
+			fprintf(out, "[Warn] %s", msg);
+			break;
+		case CPDB_DEBUG_LEVEL_ERROR:
+			fprintf(out, "[Error] %s", msg);
+			break;
+	}
 }
 
-void cpdbDebugLog2(const char *msg1,
-                   const char *msg2,
-                   CpdbDebugLevel msg_lvl)
+void cpdbFDebugPrintf(CpdbDebugLevel msg_lvl, const char *fmt, ...)
 {
-    if (msg2 == NULL)
-    {
-        cpdbDebugLog(msg1, msg_lvl);
-        return;
-    }
-
-    char *msg = malloc(strlen(msg1) + strlen(msg2) + 3);
-    sprintf(msg, "%s: %s", msg1, msg2);
-    cpdbDebugLog(msg, msg_lvl);
-    free(msg);
-}
-
-void cpdbDebugPrintf(CpdbDebugLevel msg_lvl, const char *fmt, ...)
-{
-	va_list argptr;
-	char msg[CPDB_BSIZE];
+    va_list argptr;
+	char buf[CPDB_BSIZE], msg[CPDB_BSIZE];
 	
 	va_start(argptr, fmt);
-	vsnprintf(msg, sizeof(msg), fmt, argptr);
+	vsnprintf(buf, sizeof(buf), fmt, argptr);
+    snprintf(msg, sizeof(msg), "[Frontend] %s", buf);
 	va_end(argptr);
 	
-	cpdbDebugLog(msg, msg_lvl);
+	cpdbDebugLog(msg_lvl, msg);
+}
+
+void cpdbBDebugPrintf(CpdbDebugLevel msg_lvl, const char *backend_name,
+                        const char *fmt, ...)
+{
+    va_list argptr;
+	char buf[CPDB_BSIZE], msg[CPDB_BSIZE];
+	
+	va_start(argptr, fmt);
+	vsnprintf(buf, sizeof(buf), fmt, argptr);
+    snprintf(msg, sizeof(msg), "[Backend %s] %s", backend_name, buf);
+	va_end(argptr);
+	
+	cpdbDebugLog(msg_lvl, msg);
 }

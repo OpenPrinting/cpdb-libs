@@ -41,9 +41,10 @@ extern "C" {
 #define cpdbNewCStringArray(x) ((char **)(malloc(sizeof(char *) * x)))
 
 typedef enum {
+    CPDB_DEBUG_LEVEL_DEBUG,
     CPDB_DEBUG_LEVEL_INFO,
     CPDB_DEBUG_LEVEL_WARN,
-    CPDB_DEBUG_LEVEL_ERR
+    CPDB_DEBUG_LEVEL_ERROR,
 } CpdbDebugLevel;
 
 /**
@@ -75,12 +76,10 @@ char *cpdbGetGroup(const char *option_name);
 /* Get translation for given group name */
 char *cpdbGetGroupTranslation2(const char *group_name, const char *locale);
 
-/* Print debug message */
-void cpdbDebugLog(const char *msg, CpdbDebugLevel msg_lvl);
-/* Concatenate and print debug message */
-void cpdbDebugLog2(const char *msg1, const char *msg2, CpdbDebugLevel msg_lvl);
-/* Format and print debug message */
-void cpdbDebugPrintf(CpdbDebugLevel msg_lvl, const char *fmt, ...);
+/* Format and print debug message for frontend */
+void cpdbFDebugPrintf(CpdbDebugLevel msg_lvl, const char *fmt, ...);
+/* Format and print debug message for backends */
+void cpdbBDebugPrintf(CpdbDebugLevel msg_lvl, const char *backend_name, const char *fmt, ...);
 
 /* Packing/Unpacking utility functions */
 void cpdbUnpackStringArray(GVariant *variant, int num_val, char ***val);

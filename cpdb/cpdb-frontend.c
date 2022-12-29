@@ -40,7 +40,8 @@ void cpdbDeleteFrontendObj(cpdb_frontend_obj_t *f)
 {
     if (f == NULL)
         return;
-    
+    logdebug("Deleting frontend obj %s\n", f->bus_name);
+
     cpdbDisconnectFromDBus(f);
 
     if (f->skeleton)
@@ -103,7 +104,7 @@ static void on_name_acquired(GDBusConnection *connection,
     GError *error = NULL;
     cpdb_frontend_obj_t *f = user_data;
 
-    cpdbDebugLog("Acquired bus name", CPDB_DEBUG_LEVEL_INFO);
+    logdebug("Acquired bus name %s\n", name);
     
     g_dbus_connection_signal_subscribe(connection,
                                        NULL,                            //Sender name
@@ -133,9 +134,7 @@ static void on_name_acquired(GDBusConnection *connection,
                                      &error);
     if (error)
     {
-        cpdbDebugLog2("Error exporting frontend interface",
-                      error->message,
-                      CPDB_DEBUG_LEVEL_ERR);
+        logerror("Error exporting frontend interface : %s\n", error->message);
         return;
     }
     
@@ -146,7 +145,7 @@ static void on_name_lost(GDBusConnection *connection,
                          const gchar *name,
                          gpointer user_data)
 {
-    cpdbDebugLog("Lost bus name", CPDB_DEBUG_LEVEL_INFO);
+    logdebug("Lost bus name %s\n", name);
 }
 
 GDBusConnection *get_dbus_connection()
@@ -167,13 +166,10 @@ GDBusConnection *get_dbus_connection()
                                                         &error);
     if (error)
     {
-        cpdbDebugLog2("Error acquiring bus connection",
-                      error->message,
-                      CPDB_DEBUG_LEVEL_ERR);
+        logerror("Error acquiring bus connection : %s\n", error->message);
         return NULL;
     }
-    cpdbDebugLog("Acquired bus connection", CPDB_DEBUG_LEVEL_INFO);
-    
+    logdebug("Acquired bus connection\n");
     return connection;
 }
 
@@ -181,7 +177,7 @@ void cpdbConnectToDBus(cpdb_frontend_obj_t *f)
 {
     if ((f->connection = get_dbus_connection()) == NULL)
     {
-        cpdbDebugLog("Couldn't connect to DBus", CPDB_DEBUG_LEVEL_ERR);
+        loginfo("Couldn't connect to DBus\n");
         return;
     }
     
@@ -197,7 +193,10 @@ void cpdbConnectToDBus(cpdb_frontend_obj_t *f)
 void cpdbDisconnectFromDBus(cpdb_frontend_obj_t *f)
 {
     if (f->connection == NULL || g_dbus_connection_is_closed(f->connection))
+    {
+        logwarn("Already disconnected from DBus\n");
         return;
+    }
     
     print_frontend_emit_stop_listing(f->skeleton);
     g_dbus_connection_flush_sync(f->connection, NULL, NULL);
@@ -214,6 +213,8 @@ void cpdbActivateBackends(cpdb_frontend_obj_t *f)
     PrintBackend *proxy;
     char *backend_suffix;
     
+    logdebug("Activating backends\n");
+    
     d = opendir(CPDB_BACKEND_INFO_DIR);
     len = strlen(CPDB_BACKEND_PREFIX);
 
@@ -224,10 +225,7 @@ void cpdbActivateBackends(cpdb_frontend_obj_t *f)
             if (strncmp(CPDB_BACKEND_PREFIX, dir->d_name, len) == 0)
             {
                 backend_suffix = cpdbGetStringCopy((dir->d_name) + len);
-                cpdbDebugLog2("Found backend",
-                              backend_suffix,
-                              CPDB_DEBUG_LEVEL_INFO);
-
+                loginfo("Found backend %s\n", backend_suffix);
                 proxy = cpdbCreateBackendFromFile(f->connection,
                                                   dir->d_name);
 
@@ -256,10 +254,9 @@ PrintBackend *cpdbCreateBackendFromFile(GDBusConnection *connection,
     
     if ((file = fopen(path, "r")) == NULL)
     {
-        cpdbDebugLog("Error creating backend.", CPDB_DEBUG_LEVEL_ERR);
-        cpdbDebugLog2("Couldn't open file for reading",
-                      path,
-                      CPDB_DEBUG_LEVEL_ERR);
+        logerror("Error creating backend %s : Couldn't open %s for reading\n",
+                    backend_name, path);
+        free(path);
         return NULL;
     }
     fscanf(file, "%s", obj_path);
@@ -275,10 +272,8 @@ PrintBackend *cpdbCreateBackendFromFile(GDBusConnection *connection,
                                          &error);
     if (error)
     {
-        char *msg = malloc(sizeof(char) * (strlen(backend_name) + 40));
-        sprintf(msg, "Error creating backend proxy for %s", backend_name);
-        cpdbDebugLog2(msg, error->message, CPDB_DEBUG_LEVEL_ERR);
-        free(msg);
+        logerror("Error creating backend proxy for %s : %s\n",
+                    backend_name, error->message);
     }
     
     return proxy;
@@ -286,7 +281,7 @@ PrintBackend *cpdbCreateBackendFromFile(GDBusConnection *connection,
 
 void cpdbIgnoreLastSavedSettings(cpdb_frontend_obj_t *f)
 {
-    cpdbDebugLog("Ignoring previous settings", CPDB_DEBUG_LEVEL_INFO);
+    loginfo("Ignoring previous settings\n");
     cpdbDeleteSettings(f->last_saved_settings);
     f->last_saved_settings = NULL;
 }
@@ -297,13 +292,13 @@ gboolean cpdbAddPrinter(cpdb_frontend_obj_t *f,
     p->backend_proxy = g_hash_table_lookup(f->backend, p->backend_name);
     if (p->backend_proxy == NULL)
     {
-        cpdbDebugLog2("Couldn't add printer, backend doesn't exist",
-                      p->backend_name,
-                      CPDB_DEBUG_LEVEL_ERR);
+        logerror("Couldn't add printer %s : Backend doesn't exist %s\n",
+                    p->id, p->backend_name);
         return FALSE;
     }
     g_object_ref(p->backend_proxy);
 
+    loginfo("Adding printer %s %s\n", p->id, p->backend_name);
     g_hash_table_insert(f->printer, cpdbConcatSep(p->id, p->backend_name), p);
     f->num_printers++;
 
@@ -317,12 +312,17 @@ cpdb_printer_obj_t *cpdbRemovePrinter(cpdb_frontend_obj_t *f,
     char *key;
     cpdb_printer_obj_t *p = NULL;
 
+    loginfo("Removing printer %s %s\n", printer_id, backend_name);
     key = cpdbConcatSep(printer_id, backend_name);
     if (g_hash_table_contains(f->printer, key))
     {
         p = cpdbFindPrinterObj(f, printer_id, backend_name);
         g_hash_table_remove(f->printer, key);
         f->num_printers--;
+    }
+    else
+    {
+        logwarn("Printer %s %s not found\n", printer_id, backend_name);
     }
     
     free(key);
@@ -331,26 +331,31 @@ cpdb_printer_obj_t *cpdbRemovePrinter(cpdb_frontend_obj_t *f,
 
 void cpdbRefreshPrinterList(cpdb_frontend_obj_t *f)
 {
+    loginfo("Refreshing printer list\n");
     print_frontend_emit_refresh_backend(f->skeleton);
 }
 
 void cpdbHideRemotePrinters(cpdb_frontend_obj_t *f)
 {
+    loginfo("Hiding remote printers\n");
     print_frontend_emit_hide_remote_printers(f->skeleton);
 }
 
 void cpdbUnhideRemotePrinters(cpdb_frontend_obj_t *f)
 {
+    loginfo("Unhiding remote printers\n");
     print_frontend_emit_unhide_remote_printers(f->skeleton);
 }
 
 void cpdbHideTemporaryPrinters(cpdb_frontend_obj_t *f)
 {
+    loginfo("Hiding temporary printers\n");
     print_frontend_emit_hide_temporary_printers(f->skeleton);
 }
 
 void cpdbUnhideTemporaryPrinters(cpdb_frontend_obj_t *f)
 {
+    loginfo("Unhiding temporary printers\n");
     print_frontend_emit_unhide_temporary_printers(f->skeleton);
 }
 
@@ -363,8 +368,7 @@ cpdb_printer_obj_t *cpdbFindPrinterObj(cpdb_frontend_obj_t *f,
 
     if (printer_id == NULL || backend_name == NULL)
     {
-        cpdbDebugLog("Invalid parameters: cpdbFindPrinterObj()", 
-                     CPDB_DEBUG_LEVEL_ERR);
+        logwarn("Invalid parameters: cpdbFindPrinterObj()\n");
         return NULL;
     }
 
@@ -372,8 +376,8 @@ cpdb_printer_obj_t *cpdbFindPrinterObj(cpdb_frontend_obj_t *f,
     p = g_hash_table_lookup(f->printer, hashtable_key);
     if (p == NULL)
     {
-        cpdbDebugLog("Couldn't find printer: Doesn't exist",
-                     CPDB_DEBUG_LEVEL_WARN);
+        logwarn("Couldn't find printer %s %s : Doesn't exist\n",
+                printer_id, backend_name);
     }
 
     free(hashtable_key);
@@ -384,27 +388,33 @@ cpdb_printer_obj_t *cpdbGetDefaultPrinterForBackend(cpdb_frontend_obj_t *f,
                                                     const char *backend_name)
 {
     char *def;
+    GError *error = NULL;
     PrintBackend *proxy;
-
+    cpdb_printer_obj_t *p = NULL;
+    
     proxy = g_hash_table_lookup(f->backend, backend_name);
     if (proxy == NULL)
     {
-        cpdbDebugLog2("Couldn't find backend proxy",
-                      backend_name,
-                      CPDB_DEBUG_LEVEL_WARN);
-    
+        logwarn("Couldn't find backend proxy for %s\n", backend_name);
         proxy = cpdbCreateBackendFromFile(f->connection, backend_name);
         if (proxy == NULL)
         {
-            cpdbDebugLog2("Couldn't create backend proxy",
-                          backend_name,
-                          CPDB_DEBUG_LEVEL_ERR);
+            logerror("Error getting default printer for backend : Couldn't get backend proxy\n");
             return NULL;
         }
     }
 
-    print_backend_call_get_default_printer_sync(proxy, &def, NULL, NULL);
-    return cpdbFindPrinterObj(f, def, backend_name);
+    print_backend_call_get_default_printer_sync(proxy, &def, NULL, &error);
+    if (error)
+    {
+        logerror("Error getting default printer for backend : %s\n", error->message);
+        return NULL;
+    }
+    
+    p = cpdbFindPrinterObj(f, def, backend_name);
+    if (p)
+        logdebug("Obtained default printer %s for backend %s\n", p->id, backend_name);
+    return p;
 }
 
 GList *cpdbLoadDefaultPrinters(char *path)
@@ -415,9 +425,8 @@ GList *cpdbLoadDefaultPrinters(char *path)
 
     if ((fp = fopen(path, "r")) == NULL)
     {
-        cpdbDebugLog2("Couldn't open file for reading",
-                      path,
-                      CPDB_DEBUG_LEVEL_WARN);
+        logwarn("Error loading default printers : Couldn't open %s for reading\n",
+                path);
         return NULL;
     }
 
@@ -427,6 +436,7 @@ GList *cpdbLoadDefaultPrinters(char *path)
         printers = g_list_prepend(printers, cpdbGetStringCopy(buf));
     }
     printers = g_list_reverse(printers);
+    logdebug("Loaded default printers from %s\n", path);
 
     fclose(fp);
     return printers;
@@ -442,8 +452,7 @@ cpdb_printer_obj_t *cpdbGetDefaultPrinter(cpdb_frontend_obj_t *f)
 
     if (f->num_printers == 0 || f->num_backends == 0)
     {
-        cpdbDebugLog("No printers found while obtaining default printer",
-                     CPDB_DEBUG_LEVEL_WARN);
+        logwarn("Couldn't get default printer : No printers found\n");
         return NULL;
     }
     
@@ -475,28 +484,25 @@ cpdb_printer_obj_t *cpdbGetDefaultPrinter(cpdb_frontend_obj_t *f)
         if (default_printer)
         {
             g_list_free_full(printers, free);
-            return default_printer;
+            goto found;
         }
     }
     if (printers)
         g_list_free_full(printers, free);
 
-    cpdbDebugLog("Couldn't find a valid default printer from config",
-                 CPDB_DEBUG_LEVEL_INFO);
+    logdebug("Couldn't find a valid default printer from config files\n");
 
     /**  Fallback to default CUPS printer if CUPS backend exists **/
     default_printer = cpdbGetDefaultPrinterForBackend(f, "CUPS");
     if (default_printer)
-        return default_printer;
-    cpdbDebugLog("Couldn't find a valid default CUPS printer",
-                 CPDB_DEBUG_LEVEL_INFO);
+        goto found;
+    logdebug("Couldn't find a valid default CUPS printer\n");
     
     /** Fallback to default FILE printer if FILE backend exists **/
     default_printer = cpdbGetDefaultPrinterForBackend(f, "FILE");
     if (default_printer)
-        return default_printer;
-    cpdbDebugLog("Couldn't find a valid default FILE printer",
-                 CPDB_DEBUG_LEVEL_INFO);
+        goto found;
+    logdebug("Couldn't find a valid default FILE printer\n");
     
     /** Fallback to the default printer of first backend found **/
     g_hash_table_iter_init(&iter, f->backend);
@@ -505,14 +511,21 @@ cpdb_printer_obj_t *cpdbGetDefaultPrinter(cpdb_frontend_obj_t *f)
     backend_name = (char *) key;
     default_printer = cpdbGetDefaultPrinterForBackend(f, backend_name);
     if (default_printer)
-        return default_printer;
-    cpdbDebugLog("Couldn't find a valid backend", CPDB_DEBUG_LEVEL_WARN);
+        goto found;
+    logdebug("Couldn't find a valid default %s printer\n", backend_name);
     
     /** Fallback to first printer found **/
     g_hash_table_iter_init(&iter, f->printer);
     g_hash_table_iter_next(&iter, &key, &value);
     default_printer = (cpdb_printer_obj_t *) value;
+    if (!default_printer)
+    {
+        logerror("Couldn't find a valid printer\n");
+        return NULL;
+    }
 
+found:
+    logdebug("Found default printer %s %s\n", default_printer->id, default_printer->backend_name);
     return default_printer;
 }
 
@@ -528,9 +541,8 @@ int cpdbSetDefaultPrinter(char *path,
     
     if ((fp = fopen(path, "w")) == NULL)
     {
-        cpdbDebugLog2("Couldn't open file for writing",
-                      path,
-                      CPDB_DEBUG_LEVEL_ERR);
+        logerror("Error setting default printer : Couldn't open %s for writing\n",
+                    path);
         return 0;
     }
 
@@ -554,6 +566,7 @@ int cpdbSetDefaultPrinter(char *path,
         fprintf(fp, "%s\n", (char *)printer->data);
     }
     g_list_free_full(printers, free);
+    logdebug("Saved default printers to %s", path);
 
     fclose(fp);
     return 1;
@@ -566,9 +579,7 @@ int cpdbSetUserDefaultPrinter(cpdb_printer_obj_t *p)
 
     if ((conf_dir = cpdbGetUserConfDir()) == NULL)
     {
-        cpdbDebugLog2("Error setting default printer",
-                      "Couldn't get user config directory",
-                      CPDB_DEBUG_LEVEL_ERR);
+        logerror("Error setting default printer : Couldn't get system config dir\n");
         return 0;
     }
     path = cpdbConcatPath(conf_dir, CPDB_DEFAULT_PRINTERS_FILE);
@@ -586,9 +597,7 @@ int cpdbSetSystemDefaultPrinter(cpdb_printer_obj_t *p)
 
     if ((conf_dir = cpdbGetSysConfDir()) == NULL)
     {
-        cpdbDebugLog2("Error setting default printer",
-                      "Couldn't get system config directory",
-                      CPDB_DEBUG_LEVEL_ERR);
+        logerror("Error setting default printer : Couldn't get system config dir\n");
         return 0;
     }
     path = cpdbConcatPath(conf_dir, CPDB_DEFAULT_PRINTERS_FILE);
@@ -627,10 +636,6 @@ int cpdbGetAllJobs(cpdb_frontend_obj_t *f,
         PrintBackend *proxy = (PrintBackend *)value;
         
         backend_names[i] = (char *)key;
-        cpdbDebugLog2("Trying to get jobs for backend",
-                      backend_names[i],
-                      CPDB_DEBUG_LEVEL_INFO);
-
         print_backend_call_get_all_jobs_sync(proxy,
                                              active_only,
                                              &(num_jobs[i]),
@@ -640,15 +645,15 @@ int cpdbGetAllJobs(cpdb_frontend_obj_t *f,
         
         if(error)
         {
-            cpdbDebugLog2("Call failed",
-                          error->message,
-                          CPDB_DEBUG_LEVEL_ERR);
+            logerror("Error gettings jobs for backend %s : %s\n",
+                        backend_names[i], error->message);
         	num_jobs[i] = 0;
         	
         }
         else
         {
-        	cpdbDebugLog("Call succeeded", CPDB_DEBUG_LEVEL_INFO);
+        	logdebug("Obtained %d jobs for backend %s\n",
+                        num_jobs[i], backend_names[i]);
         }
         
         total_jobs += num_jobs[i];
@@ -692,6 +697,7 @@ void cpdbDeletePrinterObj(cpdb_printer_obj_t *p)
     if (p == NULL)
         return;
     
+    logdebug("Deleting printer object %s\n", p->id);
     if (p->backend_name)
         free(p->backend_name);
     if (p->backend_proxy)
@@ -744,12 +750,13 @@ gboolean cpdbIsAcceptingJobs(cpdb_printer_obj_t *p)
                                               &error);
     if (error)
     {
-        cpdbDebugLog2("Error retrieving accepting_jobs",
-                      error->message,
-                      CPDB_DEBUG_LEVEL_ERR);
+        logerror("Error getting accepting_jobs status for %s %s : %s\n",
+                    p->id, p->backend_name, error->message);
         return FALSE;
     }
 
+    logdebug("Obtained accepting_jobs=%d for %s %s\n", 
+                p->accepting_jobs, p->id, p->backend_name);
     return p->accepting_jobs;
 }
 
@@ -764,12 +771,13 @@ char *cpdbGetState(cpdb_printer_obj_t *p)
                                               &error);
     if (error)
     {
-        cpdbDebugLog2("Error retrieving printer state",
-                      error->message,
-                      CPDB_DEBUG_LEVEL_ERR);
+        logerror("Error getting printer state for %s %s : %s\n",
+                    p->id, p->backend_name, error->message);
         return NULL;
     }
 
+    logdebug("Obtained state=%s for %s %s\n", 
+                p->state, p->id, p->backend_name);
     return p->state;
 }
 
@@ -777,8 +785,7 @@ cpdb_options_t *cpdbGetAllOptions(cpdb_printer_obj_t *p)
 {
     if (p == NULL) 
     {
-        cpdbDebugLog("Invalid params: cpdbGetAllOptions()", 
-                     CPDB_DEBUG_LEVEL_WARN);
+        logwarn("Invalid params: cpdbGetAllOptions()\n");
         return NULL;
     }
 
@@ -803,6 +810,8 @@ cpdb_options_t *cpdbGetAllOptions(cpdb_printer_obj_t *p)
                                             &error);
     if (!error)
     {
+        logdebug("Obtained %d options and %d media for %s %s\n",
+                    num_options, num_media, p->id, p->backend_name);
         cpdbUnpackOptions(num_options,
                           var,
                           num_media,
@@ -812,9 +821,8 @@ cpdb_options_t *cpdbGetAllOptions(cpdb_printer_obj_t *p)
     }
     else 
     {
-        cpdbDebugLog2("Error retrieving printer options",
-                      error->message,
-                      CPDB_DEBUG_LEVEL_ERR);
+        logerror("Error getting printer options for %s %s : %s\n",
+                    p->id, p->backend_name, error->message);
         return NULL;
     }
 }
@@ -824,8 +832,7 @@ cpdb_option_t *cpdbGetOption(cpdb_printer_obj_t *p,
 {
     if (p == NULL || name == NULL) 
     {
-        cpdbDebugLog("Invalid params: cpdbGetOption()", 
-                     CPDB_DEBUG_LEVEL_WARN);
+        logwarn("Invalid params: cpdbGetOption()\n");
         return NULL;
     }
 
@@ -840,8 +847,7 @@ char *cpdbGetDefault(cpdb_printer_obj_t *p,
 {
     if (p == NULL || name == NULL)
     {
-        cpdbDebugLog("Invalid params: cpdbGetDefault()", 
-                     CPDB_DEBUG_LEVEL_WARN);
+        logwarn("Invalid params: cpdbGetDefault()\n");
         return NULL;
     }
 
@@ -856,8 +862,7 @@ char *cpdbGetSetting(cpdb_printer_obj_t *p,
 {
     if (p == NULL || name == NULL)
     {
-        cpdbDebugLog("Invalid params: cpdbGetSetting()", 
-                     CPDB_DEBUG_LEVEL_WARN);
+        logwarn("Invalid params: cpdbGetSetting()\n");
         return NULL;
     }
 
@@ -879,7 +884,7 @@ char *cpdbGetCurrent(cpdb_printer_obj_t *p,
 int cpdbGetActiveJobsCount(cpdb_printer_obj_t *p)
 {
     int count;
-    GError *error;
+    GError *error = NULL;
     
     print_backend_call_get_active_jobs_count_sync(p->backend_proxy,
                                                   p->id,
@@ -888,12 +893,13 @@ int cpdbGetActiveJobsCount(cpdb_printer_obj_t *p)
                                                   &error);
     if (error)
     {
-        cpdbDebugLog2("Error getting active jobs count",
-                      error->message,
-                      CPDB_DEBUG_LEVEL_ERR);
+        logerror("Error getting active jobs count for % %s : %s\n",
+                    p->id, p->backend_name, error->message);
         return -1;
     }
     
+    logdebug("Obtained %d active jobs for %s %s\n", count, 
+                p->id, p->backend_name);
     return count;
 }
 
@@ -917,21 +923,20 @@ char *cpdbPrintFile(cpdb_printer_obj_t *p,
                                        
     if (error)
     {
-        cpdbDebugLog2("Error printing file",
-                      error->message,
-                      CPDB_DEBUG_LEVEL_ERR);
+        logerror("Error printing file %s on %s %s : %s\n", 
+                    absolute_file_path, p->id, p->backend_name, error->message);
         return NULL;
     }
     
     if (jobid == NULL || jobid == "")
     {
-        cpdbDebugLog("Error printing file", CPDB_DEBUG_LEVEL_ERR);
+        logerror("Error printing file %s on %s %s : Couldn't create a job\n", 
+                    absolute_file_path, p->id, p->backend_name);
         return NULL;
     }
     
-    cpdbDebugLog2("File printed successfully",
-                  jobid,
-                  CPDB_DEBUG_LEVEL_INFO);
+    loginfo("File %s printed on %s %s successfully\n",
+                absolute_file_path, p->id, p->backend_name);
     cpdbSaveSettingsToDisk(p->settings);
     
     return jobid;
@@ -960,22 +965,20 @@ char *cpdbPrintFilePath(cpdb_printer_obj_t *p,
     
     if (error)
     {
-        cpdbDebugLog2("Error printing file",
-                      error->message,
-                      CPDB_DEBUG_LEVEL_ERR);
+        logerror("Error printing file %s to %s : %s\n", 
+                 absolute_file_path, absolute_final_file_path, error->message);
         return NULL;
     }
     
     if (result == NULL)
     {
-        cpdbDebugLog("Error printing file", CPDB_DEBUG_LEVEL_ERR);
+        logerror("Error printing file %s to %s\n", 
+                 absolute_file_path, absolute_final_file_path);
         return NULL;
     }
     
-    cpdbDebugLog2("File printed successfully",
-                  absolute_final_file_path,
-                  CPDB_DEBUG_LEVEL_INFO);
-
+    loginfo("File %s printed to %s successfully\n",
+                absolute_file_path, absolute_final_file_path);
     return result;
 }
 
@@ -983,8 +986,11 @@ void cpdbAddSettingToPrinter(cpdb_printer_obj_t *p,
                              const char *name,
                              const char *val)
 {
-    if (p == NULL)
+    if (p == NULL || name == NULL)
+    {
+        logwarn("Invalid params: cpdbAddSettingToPrinter()\n");
         return;
+    }
 
     cpdbAddSetting(p->settings, name, val);
 }
@@ -992,7 +998,12 @@ void cpdbAddSettingToPrinter(cpdb_printer_obj_t *p,
 gboolean cpdbClearSettingFromPrinter(cpdb_printer_obj_t *p,
                                      const char *name)
 {
-    cpdbClearSetting(p->settings, name);
+    if (p == NULL || name == NULL)
+    {
+        logwarn("Invalid params: cpdbClearSettingFromPrinter()\n");
+        return FALSE;
+    }
+    return cpdbClearSetting(p->settings, name);
 }
 
 gboolean cpdbCancelJob(cpdb_printer_obj_t *p,
@@ -1009,12 +1020,13 @@ gboolean cpdbCancelJob(cpdb_printer_obj_t *p,
                                        &error);
     if (error)
     {
-        cpdbDebugLog2("Error cancelling job",
-                      error->message,
-                      CPDB_DEBUG_LEVEL_ERR);
+        logerror("Error cancelling job %s on %s %s\n", 
+                    job_id, p->id, p->backend_name, error->message);
         return FALSE;
     }
     
+    logdebug("Obtained status=%d for cancelling job %s on %s %s\n",
+                status, job_id, p->id, p->backend_name);
     return status;
 }
 
@@ -1027,25 +1039,30 @@ void cpdbPicklePrinterToFile(cpdb_printer_obj_t *p,
     const char *unique_bus_name;
     GHashTableIter iter;
     gpointer key, value;
+    GError *error = NULL;
 	
-    print_backend_call_keep_alive_sync(p->backend_proxy, NULL, NULL);
+    print_backend_call_keep_alive_sync(p->backend_proxy, NULL, &error);
+    if (error)
+    {
+        logerror("Error keeping backend %s alive : %s\n",
+                    p->backend_name, error->message);
+        return;
+    }
+    logdebug("Keeping backend %s alive\n", p->backend_name);
     
     path = cpdbGetAbsolutePath(filename);
     if ((fp = fopen(path, "w")) == NULL)
     {
-        cpdbDebugLog("Error pickling printer.", CPDB_DEBUG_LEVEL_ERR);
-        cpdbDebugLog2("Couldn't open file for writing",
-                      path,
-                      CPDB_DEBUG_LEVEL_ERR);
+        logerror("Error pickling printer %s %s : Couldn't open %s for writing\n",
+                    p->id, p->backend_name, path);
         return;
     }
 
     unique_bus_name = g_dbus_connection_get_unique_name(parent_dialog->connection);
     if (unique_bus_name == NULL)
     {
-        cpdbDebugLog2("Error pickling printer",
-                     "Couldn't get unique bus name",
-                     CPDB_DEBUG_LEVEL_ERR);
+        logerror("Error pickling printer %s %s: Couldn't get unique bus name\n",
+                    p->id, p->backend_name);
         return;
     }
     
@@ -1068,6 +1085,8 @@ void cpdbPicklePrinterToFile(cpdb_printer_obj_t *p,
     {
         fprintf(fp, "%s#%s#\n", (char *)key, (char *)value);
     }
+    logdebug("Pickled printer %s %s to %s\n",
+                p->id, p->backend_name, path);
     
     fclose(fp);
     free(path);
@@ -1086,36 +1105,25 @@ cpdb_printer_obj_t *cpdbResurrectPrinterFromFile(const char *filename)
     path = cpdbGetAbsolutePath(filename);
     if ((fp = fopen(path, "r")) == NULL)
     {
-        cpdbDebugLog("Error resurrecting printer", CPDB_DEBUG_LEVEL_ERR);
-        cpdbDebugLog2("Couldn't open file for reading",
-                      path,
-                      CPDB_DEBUG_LEVEL_ERR);
+        logerror("Error resurrecting printer : Couldn't open %s for reading\n",
+                    p->id, p->backend_name, path);
         free(path);
         return NULL;
     }
 
     p = cpdbGetNewPrinterObj();
-    cpdbDebugLog2("Ressurecting printer from file",
-                  path,
-                  CPDB_DEBUG_LEVEL_INFO);
     free(path);
 
     fgets(buf, sizeof(buf), fp);
     previous_parent_dialog = cpdbGetStringCopy(strtok(buf, "#"));
-    cpdbDebugLog2("Previous parent dialog",
-                  previous_parent_dialog,
-                  CPDB_DEBUG_LEVEL_INFO);
 
     fgets(buf, sizeof(buf), fp);
     p->backend_name = cpdbGetStringCopy(strtok(buf, "#"));
-    cpdbDebugLog2("Backend name",
-                  p->backend_name,
-                  CPDB_DEBUG_LEVEL_INFO);
     
     backend_file_name = cpdbConcat(CPDB_BACKEND_PREFIX, p->backend_name);
     if ((connection = get_dbus_connection()) == NULL)
     {
-        cpdbDebugLog("Error resurrecting printer", CPDB_DEBUG_LEVEL_ERR);
+        logerror("Error resurrecting printer : Couldn't get dbus connection\n");
         fclose(fp);
         return NULL;
     }
@@ -1128,9 +1136,7 @@ cpdb_printer_obj_t *cpdbResurrectPrinterFromFile(const char *filename)
                                     &error);
     if (error)
     {
-        cpdbDebugLog2("Error replacing resurrected printer", 
-                      error->message, 
-                      CPDB_DEBUG_LEVEL_ERR);
+        logerror("Error replacing resurrected printer : %s\n", error->message); 
         fclose(fp);
         return NULL;
     }
@@ -1158,16 +1164,15 @@ cpdb_printer_obj_t *cpdbResurrectPrinterFromFile(const char *filename)
     cpdbPrintBasicOptions(p);
 
     fscanf(fp, "%d\n", &count);
-    cpdbDebugLog("Settings: ", CPDB_DEBUG_LEVEL_INFO);
     while (count--)
     {
         fgets(buf, sizeof(buf), fp);
         name = strtok(buf, "#");
         value = strtok(NULL, "#");
-        cpdbDebugLog2(name, value, CPDB_DEBUG_LEVEL_INFO);
         cpdbAddSetting(p->settings, name, value);
     }
-
+    logdebug("Resurrected printer %s %s from %s\n", 
+                p->id, p->backend_name, filename);
     fclose(fp);
     return p;
 }
@@ -1188,15 +1193,14 @@ char *cpdbGetOptionTranslation(cpdb_printer_obj_t *p,
                                                    &error);
     if (error)
     {
-        cpdbDebugPrintf(CPDB_DEBUG_LEVEL_ERR,
-                        "Error getting translation : %s\n",
-                        error->message);
-        cpdbDebugPrintf(CPDB_DEBUG_LEVEL_ERR,
-                        "option: %s, locale: %s\n",
-                        option_name, locale);
+        logerror("Error getting translation for option=%s,locale=%s,printer=%s#%s : %s\n",
+                    option_name, locale,
+                    p->id, p->backend_name, error->message);
         return NULL;
     }
     
+    logdebug("Obtained translation=%s for option=%s,locale=%s,printer=%s#%s\n",
+                translation, option_name, locale, p->id, p->backend_name);
     return cpdbGetStringCopy(translation);
 }
 
@@ -1218,15 +1222,15 @@ char *cpdbGetChoiceTranslation(cpdb_printer_obj_t *p,
                                                    &error);
     if (error)
     {
-        cpdbDebugPrintf(CPDB_DEBUG_LEVEL_ERR,
-                        "Error getting translation : %s\n",
-                        error->message);
-        cpdbDebugPrintf(CPDB_DEBUG_LEVEL_ERR,
-                        "option: %s, choice: %s, locale: %s\n",
-                        option_name, choice_name, locale);
+        logerror("Error getting translation for option=%s,choice=%s,locale=%s,printer=%s#%s : %s\n",
+                    option_name, choice_name, locale,
+                    p->id, p->backend_name, error->message);
         return NULL;
     }
     
+    logdebug("Obtained translation=%s for option=%s,choice=%s,locale=%s,printer=%s#%s\n",
+                translation, option_name, choice_name, locale, 
+                p->id, p->backend_name);
     return cpdbGetStringCopy(translation);
 }
 
@@ -1248,15 +1252,14 @@ char *cpdbGetGroupTranslation(cpdb_printer_obj_t *p,
 
     if (error)
     {
-        cpdbDebugPrintf(CPDB_DEBUG_LEVEL_ERR,
-                        "Error getting translation : %s\n",
-                        error->message);
-        cpdbDebugPrintf(CPDB_DEBUG_LEVEL_ERR,
-                        "group: %s, locale: %s\n",
-                        group_name, locale);
+        logerror("Error getting translation for group=%s,locale=%s,printer=%s#%s : %s\n",
+                    group_name, locale,
+                    p->id, p->backend_name, error->message);
         return NULL;
     }
-
+    
+    logdebug("Obtained translation=%s for group=%s,locale=%s,printer=%s#%s\n",
+                translation, group_name, locale, p->id, p->backend_name);
     return cpdbGetStringCopy(translation);
 }
 
@@ -1273,9 +1276,7 @@ char *cpdbGetHumanReadableOptionName(cpdb_printer_obj_t *p,
                                                            &error);
     if(error)
     {
-        cpdbDebugLog2("Error getting human readable option name", 
-                      error->message, 
-                      CPDB_DEBUG_LEVEL_ERR);
+        logerror("Error getting human readable option name\n", error->message);
         return cpdbGetStringCopy(option_name);
     }
     
@@ -1297,9 +1298,7 @@ char *cpdbGetHumanReadableChoiceName(cpdb_printer_obj_t *p,
                                                            &error);
     if(error)
     {
-        cpdbDebugLog2("Error getting human readable choice name",
-                      error->message,
-                      CPDB_DEBUG_LEVEL_ERR);
+        logerror("Error getting human readable choice name\n", error->message);
         return cpdbGetStringCopy(choice_name);
     }
     
@@ -1368,13 +1367,13 @@ void acquire_details_cb(PrintBackend *proxy,
                                                &error);
     if (error)
     {
-        cpdbDebugLog2("Error acquiring printer details",
-                      error->message,
-                      CPDB_DEBUG_LEVEL_ERR);
+        logerror("Error acquiring printer details for %s %s : %s\n",
+                    p->id, p->backend_name, error->message);
         caller_cb(p, FALSE, a->user_data);
     }
     else
     {
+        logdebug("Acquired printer details for %s %s\n", p->id, p->backend_name);
         cpdbUnpackOptions(num_options, var, num_media, media_var, p->options);
         caller_cb(p, TRUE, a->user_data);
     }
@@ -1397,6 +1396,7 @@ void cpdbAcquireDetails(cpdb_printer_obj_t *p,
     a->caller_cb = caller_cb;
     a->user_data = user_data;
     
+    logdebug("Acquiring printer details for %s %s\n", p->id, p->backend_name);
     print_backend_call_get_all_options(p->backend_proxy,
                                        p->id, 
                                        NULL,
@@ -1420,8 +1420,7 @@ void cpdbCopySettings(const cpdb_settings_t *source,
 {
     if (source == NULL || dest == NULL)
     {
-        cpdbDebugLog("Invalid params: cpdbCopySettings()",
-                     CPDB_DEBUG_LEVEL_WARN);
+        logwarn("Invalid params: cpdbCopySettings()\n");
         return;
     }
 
@@ -1439,8 +1438,7 @@ void cpdbAddSetting(cpdb_settings_t *s,
 {
     if (s == NULL || name == NULL) 
     {
-        cpdbDebugLog("Invalid params: cpdbAddSettings()",
-                     CPDB_DEBUG_LEVEL_WARN);
+        logwarn("Invalid params: cpdbAddSettings()\n");
         return;
     }
 
@@ -1468,8 +1466,7 @@ gboolean cpdbClearSetting(cpdb_settings_t *s, const char *name)
 {
     if (s == NULL || name == NULL) 
     {
-        cpdbDebugLog("Invalid params: cpdbClearSettings()",
-                     CPDB_DEBUG_LEVEL_WARN);
+        logwarn("Invalid params: cpdbClearSetting()\n");
         return FALSE;
     }
 
@@ -1517,20 +1514,15 @@ void cpdbSaveSettingsToDisk(cpdb_settings_t *s)
 
     if ((conf_dir = cpdbGetUserConfDir()) == NULL)
     {
-        cpdbDebugLog2("Error saving settings to disk",
-                      "Couldn't obtain user config directory",
-                      CPDB_DEBUG_LEVEL_ERR);
+        logerror("Error saving settings to disk : Couldn't obtain user config dir\n");
         return;
     }
     path = cpdbConcatPath(conf_dir, CPDB_PRINT_SETTINGS_FILE);
 
     if ((fp = fopen(path, "w")) == NULL)
     {
-        cpdbDebugLog("Error saving settings to disk.",
-                     CPDB_DEBUG_LEVEL_WARN);
-        cpdbDebugLog2("Couldn't open file for writing",
-                      path,
-                      CPDB_DEBUG_LEVEL_WARN);
+        logerror("Error saving settings to disk : Couldn't open %s for writing\n",
+                    path);
         return;
     }
     fprintf(fp, "%d\n", s->count);
@@ -1540,6 +1532,7 @@ void cpdbSaveSettingsToDisk(cpdb_settings_t *s)
     {
         fprintf(fp, "%s#%s#\n", (char *)key, (char *)value);
     }
+    logdebug("Saved %d settings on disk to %s\n", s->count, path);
 
     fclose(fp);
     free(path);
@@ -1556,39 +1549,28 @@ cpdb_settings_t *cpdbReadSettingsFromDisk()
 
     if ((conf_dir = cpdbGetUserConfDir()) == NULL)
     {
-        cpdbDebugLog2("No previous settings found",
-                      "Couldn't obtain user config directory",
-                      CPDB_DEBUG_LEVEL_ERR);
+        logerror("No previous settings found : Couldn't obtain user config dir\n");
         return NULL;
     }
     path = cpdbConcatPath(conf_dir, CPDB_PRINT_SETTINGS_FILE);
 
     if ((fp = fopen(path, "r")) == NULL)
     {
-        cpdbDebugLog("No previous settings found.",
-                     CPDB_DEBUG_LEVEL_WARN);
-        cpdbDebugLog2("Couldn't open file for reading:",
-                      path,
-                      CPDB_DEBUG_LEVEL_WARN);
+        loginfo("No previous settings found : Couldn't open %s for reading\n",
+                    path);
         return NULL;
     }
 
     s = cpdbGetNewSettings();
-    fscanf(fp, "%d\n", &count);
-    
-    sprintf(buf, "Retrieved %d settings from disk", count);
-    cpdbDebugLog(buf, CPDB_DEBUG_LEVEL_INFO);
-                  
+    fscanf(fp, "%d\n", &count);    
     while (count--)
     {
         fgets(buf, sizeof(buf), fp);
         name = strtok(buf, "#");
         value = strtok(NULL, "#");
-        cpdbDebugLog2(name,
-                      value,
-                      CPDB_DEBUG_LEVEL_INFO);
         cpdbAddSetting(s, name, value);
     }
+    logdebug("Retrievied %s settings from disk at %s\n", count, path);
 
     fclose(fp);
     free(path);

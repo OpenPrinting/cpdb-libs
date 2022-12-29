@@ -23,6 +23,12 @@ extern "C"
 #define CPDB_PRINT_SETTINGS_FILE   "print-settings"
 #define CPDB_DEFAULT_PRINTERS_FILE "default-printers"
 
+/* Debug macros */
+#define logdebug(...) cpdbFDebugPrintf(CPDB_DEBUG_LEVEL_DEBUG, __VA_ARGS__)
+#define loginfo(...)  cpdbFDebugPrintf(CPDB_DEBUG_LEVEL_INFO, __VA_ARGS__)
+#define logwarn(...)  cpdbFDebugPrintf(CPDB_DEBUG_LEVEL_WARN, __VA_ARGS__)
+#define logerror(...) cpdbFDebugPrintf(CPDB_DEBUG_LEVEL_ERROR, __VA_ARGS__)
+
 typedef struct cpdb_frontend_obj_s cpdb_frontend_obj_t;
 typedef struct cpdb_printer_obj_s cpdb_printer_obj_t;
 typedef struct cpdb_async_obj_s cpdb_async_obj_t;

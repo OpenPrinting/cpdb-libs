@@ -428,21 +428,6 @@ char *cpdbGetChoiceTranslation(cpdb_printer_obj_t *p, const char *option_name,
 char *cpdbGetGroupTranslation(cpdb_printer_obj_t *p, const char *group_name, const char *locale);
 
 /**
- * Finds the human readable English name of the setting.
- *
- * @param option_name : name of the setting
- */
-char *cpdbGetHumanReadableOptionName(cpdb_printer_obj_t *p, const char *option_name);
-
-/**
- * Finds the human readable English name of the choice for the given setting.
- *
- * @param option_name : name of the setting
- * @param choice_name : value of the choice
- */
-char *cpdbGetHumanReadableChoiceName(cpdb_printer_obj_t *p, const char *option_name, const char *choice_name);
-
-/**
  * Get a single cpdb_media_t struct corresponding to the give media name
  *
  * @param media : name of media-size

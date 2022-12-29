@@ -1263,48 +1263,6 @@ char *cpdbGetGroupTranslation(cpdb_printer_obj_t *p,
     return cpdbGetStringCopy(translation);
 }
 
-char *cpdbGetHumanReadableOptionName(cpdb_printer_obj_t *p,
-                                     const char *option_name)
-{
-    char *human_readable_name;
-    GError *error = NULL;
-
-    print_backend_call_get_human_readable_option_name_sync(p->backend_proxy, 
-                                                           option_name,
-                                                           &human_readable_name, 
-                                                           NULL, 
-                                                           &error);
-    if(error)
-    {
-        logerror("Error getting human readable option name\n", error->message);
-        return cpdbGetStringCopy(option_name);
-    }
-    
-    return human_readable_name;
-}
-
-char *cpdbGetHumanReadableChoiceName(cpdb_printer_obj_t *p,
-                                     const char *option_name,
-                                     const char* choice_name)
-{
-    char *human_readable_name;
-    GError *error = NULL;
-
-    print_backend_call_get_human_readable_choice_name_sync(p->backend_proxy,
-                                                           option_name,
-                                                           choice_name,
-                                                           &human_readable_name,
-                                                           NULL,
-                                                           &error);
-    if(error)
-    {
-        logerror("Error getting human readable choice name\n", error->message);
-        return cpdbGetStringCopy(choice_name);
-    }
-    
-    return human_readable_name;
-}
-
 cpdb_media_t *cpdbGetMedia(cpdb_printer_obj_t *p,
                            const char *media)
 {

@@ -12,14 +12,13 @@ If one opens the print dialog, the dialog will not talk directly to CUPS, a clou
 
 ## Dependencies
 
- - GLIB 2.0:
-   `sudo apt install libglib2.0-dev`
-   
- - LIBDBUS:
-   `sudo apt install libdbus-1-dev`
+ - GLIB 2.0
+ - LIBDBUS
+ - LIBTOOL
+ - GETTEXT
 
- - LIBTOOL:
-   `sudo apt install libtool`
+On Debian based distros, these can be installed by running: \
+`sudo apt install libglib2.0-dev libdbus-1-dev libtool gettext`
 
 ## Build and installation
 

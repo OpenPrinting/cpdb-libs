@@ -26,7 +26,6 @@ sinclude(m4/cpdb-directories.m4)
 sinclude(m4/cpdb-common.m4)
 
 AC_CONFIG_FILES([Makefile
-                 po/Makefile.in
                  cpdb/Makefile
                  cpdb-backend.pc
                  cpdb-frontend.pc

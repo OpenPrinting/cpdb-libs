@@ -1,3 +1,4 @@
+*~
 *.o
 *.pc
 *.pdf
@@ -13,6 +14,7 @@ autom4te.cache
 build-aux/
 m4/*
 !m4/cpdb*
+ABOUT-NLS
 po/*
 !po/POTFILE.in
 !po/Makevars

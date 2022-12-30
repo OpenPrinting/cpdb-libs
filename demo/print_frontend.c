@@ -361,25 +361,6 @@ gpointer parse_commands(gpointer user_data)
             cpdb_printer_obj_t *p = cpdbFindPrinterObj(f, printer_id, backend_name);
             printf("%s\n", cpdbGetGroupTranslation(p, group_name, locale));
         }
-        else if (strcmp(buf, "get-human-readable-option-name") == 0)
-        {
-            char printer_id[100];
-            char backend_name[100];
-            char option_name[100];
-            scanf("%s%s%s", printer_id, backend_name, option_name);
-            cpdb_printer_obj_t *p = cpdbFindPrinterObj(f, printer_id, backend_name);
-            printf("%s\n", cpdbGetHumanReadableOptionName(p, option_name));
-        }
-        else if (strcmp(buf, "get-human-readable-choice-name") == 0)
-        {
-            char printer_id[100];
-            char backend_name[100];
-            char option_name[100];
-            char choice_name[100];
-            scanf("%s%s%s%s", printer_id, backend_name, option_name, choice_name);
-            cpdb_printer_obj_t *p = cpdbFindPrinterObj(f, printer_id, backend_name);
-            printf("%s\n", cpdbGetHumanReadableChoiceName(p, option_name, choice_name));
-        }
         else if (strcmp(buf, "get-media-size") == 0)
         {
             char printer_id[100];
@@ -454,8 +435,5 @@ void display_help()
     printf("%s\n", "get-option-translation <option> <printer id> <backend name>");
     printf("%s\n", "get-choice-translation <option> <choice> <printer id> <backend name>");
     printf("%s\n", "get-group-translation <group> <printer id> <backend name>");
-    printf("%s\n", "get-human-readable-option-name <printer id> <backend name> <option name>");
-    printf("%s\n", "get-human-readable-choice-name <printer id> <backend name> <option name> <choice name>");
-
     printf("pickle-printer <printer id> <backend name>\n");
 }

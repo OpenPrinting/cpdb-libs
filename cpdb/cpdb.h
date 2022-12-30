@@ -94,6 +94,7 @@ GVariant *cpdbPackMediaArray(int num_val, int (*margins)[4]);
 
 #define CPDB_GROUP_MEDIA        N_("Media")
 #define CPDB_GROUP_COPIES       N_("Copies")
+#define CPDB_GROUP_COLOR        N_("Color")
 #define CPDB_GROUP_SCALING      N_("Scaling")
 #define CPDB_GROUP_QUALITY      N_("Ouput Quality")
 #define CPDB_GROUP_ADVANCED     N_("Advanced")
@@ -113,7 +114,13 @@ GVariant *cpdbPackMediaArray(int num_val, int (*margins)[4]);
 #define CPDB_OPTION_COPIES_SUPPORTED        N_("multiple-document-jobs-supported")
 
 #define CPDB_OPTION_MEDIA                   N_("media")
+#define CPDB_OPTION_MEDIA_COL               N_("media-col")
 #define CPDB_OPTION_MEDIA_TYPE              N_("media-type")
+#define CPDB_OPTION_MEDIA_SOURCE            N_("media-source")
+#define CPDB_OPTION_MARGIN_TOP              N_("media-top-margin")
+#define CPDB_OPTION_MARGIN_BOTTOM           N_("media-bottom-margin")
+#define CPDB_OPTION_MARGIN_LEFT             N_("media-left-margin")
+#define CPDB_OPTION_MARGIN_RIGHT            N_("media-right-margin")
 
 #define CPDB_OPTION_SIDES                   N_("sides")
 #define CPDB_OPTION_MIRROR                  N_("mirror")
@@ -139,6 +146,7 @@ GVariant *cpdbPackMediaArray(int num_val, int (*margins)[4]);
 
 #define CPDB_OPTION_JOB_NAME                N_("job-name")
 #define CPDB_OPTION_JOB_SHEETS              N_("job-sheets")
+#define CPDB_OPTION_BILLING_INFO            N_("billing-info")
 #define CPDB_OPTION_JOB_PRIORITY            N_("job-priority")
 #define CPDB_OPTION_JOB_HOLD_UNTIL          N_("job-hold-until")
 
@@ -149,20 +157,32 @@ GVariant *cpdbPackMediaArray(int num_val, int (*margins)[4]);
  * While adding settings, use these as option names
  */
 
-#define CPDB_COLOR_MODE_COLOR N_("color")
-#define CPDB_COLOR_MODE_BW N_("monochrome")
-#define CPDB_COLOR_MODE_AUTO N_("auto")
+#define CPDB_PAGE_SET_ALL               N_("all")
+#define CPDB_PAGE_SET_ODD               N_("odd")
+#define CPDB_PAGE_SET_EVEN              N_("even")
 
-#define CPDB_QUALITY_DRAFT N_("draft")
-#define CPDB_QUALITY_NORMAL N_("normal")
-#define CPDB_QUALITY_HIGH N_("high")
+#define CPDB_COLOR_MODE_COLOR           N_("color")
+#define CPDB_COLOR_MODE_BW              N_("monochrome")
+#define CPDB_COLOR_MODE_AUTO            N_("auto")
 
-#define CPDB_SIDES_ONE_SIDED N_("one-sided")
-#define CPDB_SIDES_TWO_SIDED_SHORT N_("two-sided-short")
-#define CPDB_SIDES_TWO_SIDED_LONG N_("two-sided-long")
+#define CPDB_PAGE_DELIVERY_SAME         N_("same-order")
+#define CPDB_PAGE_DELIVERY_REVERSE      N_("reverse-order")
 
-#define CPDB_ORIENTATION_PORTRAIT N_("portrait")
-#define CPDB_ORIENTATION_LANDSCAPE N_("landscape")
+#define CPDB_COLLATE_ENABLED            N_("separate-documents-collated-copies")
+#define CPDB_COLLATE_DISABLED           N_("separate-documents-uncollated-copies")
+
+#define CPDB_QUALITY_DRAFT              N_("draft")
+#define CPDB_QUALITY_NORMAL             N_("normal")
+#define CPDB_QUALITY_HIGH               N_("high")
+
+#define CPDB_SIDES_ONE_SIDED            N_("one-sided")
+#define CPDB_SIDES_TWO_SIDED_SHORT      N_("two-sided-short")
+#define CPDB_SIDES_TWO_SIDED_LONG       N_("two-sided-long")
+
+#define CPDB_ORIENTATION_PORTRAIT       N_("3")
+#define CPDB_ORIENTATION_LANDSCAPE      N_("4")
+#define CPDB_ORIENTATION_RLANDSCAPE     N_("5")
+#define CPDB_ORIENTATION_RPORTRAIT      N_("6")
 
 #define CPDB_PRIORITY_URGENT N_("urgent")
 #define CPDB_PRIORITY_HIGH N_("high")

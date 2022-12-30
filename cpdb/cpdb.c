@@ -30,9 +30,10 @@ const char *cpdbGroupTable[][2] = {
     {CPDB_OPTION_PRINT_SCALING,                 CPDB_GROUP_SCALING},
     {CPDB_OPTION_FIDELITY,                      CPDB_GROUP_SCALING},
 
+    {CPDB_OPTION_COLOR_MODE,                    CPDB_GROUP_COLOR},
+
     {CPDB_OPTION_PRINT_QUALITY,                 CPDB_GROUP_QUALITY},
     {CPDB_OPTION_RESOLUTION,                    CPDB_GROUP_QUALITY},
-    {CPDB_OPTION_COLOR_MODE,                    CPDB_GROUP_QUALITY},
     
     {CPDB_OPTION_FINISHINGS,                    CPDB_GROUP_FINISHINGS},
     {CPDB_OPTION_OUTPUT_BIN,                    CPDB_GROUP_FINISHINGS},

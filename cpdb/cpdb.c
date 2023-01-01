@@ -348,7 +348,7 @@ static void cpdbDebugLog(CpdbDebugLevel msg_lvl, const char *msg)
 void cpdbFDebugPrintf(CpdbDebugLevel msg_lvl, const char *fmt, ...)
 {
     va_list argptr;
-	char buf[CPDB_BSIZE], msg[CPDB_BSIZE];
+	char buf[CPDB_BSIZE], msg[CPDB_BSIZE + 12];
 	
 	va_start(argptr, fmt);
 	vsnprintf(buf, sizeof(buf), fmt, argptr);
@@ -362,7 +362,7 @@ void cpdbBDebugPrintf(CpdbDebugLevel msg_lvl, const char *backend_name,
                         const char *fmt, ...)
 {
     va_list argptr;
-	char buf[CPDB_BSIZE], msg[CPDB_BSIZE];
+	char buf[CPDB_BSIZE], msg[CPDB_BSIZE + 12];
 	
 	va_start(argptr, fmt);
 	vsnprintf(buf, sizeof(buf), fmt, argptr);

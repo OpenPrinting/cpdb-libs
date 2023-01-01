@@ -184,14 +184,17 @@ GVariant *cpdbPackMediaArray(int num_val, int (*margins)[4]);
 #define CPDB_ORIENTATION_RLANDSCAPE     N_("5")
 #define CPDB_ORIENTATION_RPORTRAIT      N_("6")
 
-#define CPDB_PRIORITY_URGENT N_("urgent")
-#define CPDB_PRIORITY_HIGH N_("high")
-#define CPDB_PRIORITY_MEDIUM N_("medium")
-#define CPDB_PRIORITY_LOW N_("low")
+#define CPDB_JOB_HOLD_NONE              N_("no-hold")
+#define CPDB_JOB_HOLD_INDEFINITE        N_("indefinite")
 
-#define CPDB_STATE_IDLE N_("idle")
-#define CPDB_STATE_PRINTING N_("printing")
-#define CPDB_STATE_STOPPED N_("stopped")
+#define CPDB_PRIORITY_URGENT            N_("urgent")
+#define CPDB_PRIORITY_HIGH              N_("high")
+#define CPDB_PRIORITY_MEDIUM            N_("medium")
+#define CPDB_PRIORITY_LOW               N_("low")
+
+#define CPDB_STATE_IDLE                 N_("idle")
+#define CPDB_STATE_PRINTING             N_("printing")
+#define CPDB_STATE_STOPPED              N_("stopped")
 
 #define CPDB_SIGNAL_STOP_BACKEND N_("StopListing")
 #define CPDB_SIGNAL_REFRESH_BACKEND N_("RefreshBackend")

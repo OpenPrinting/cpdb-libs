@@ -12,18 +12,19 @@ If one opens the print dialog, the dialog will not talk directly to CUPS, a clou
 
 ## Dependencies
 
- - GLIB 2.0
- - LIBDBUS
- - LIBTOOL
- - GETTEXT
+ - autoconf
+ - autopoint
+ - glib 2.0
+ - libdbus
+ - libtool
 
 On Debian based distros, these can be installed by running: \
-`sudo apt install libglib2.0-dev libdbus-1-dev libtool gettext`
+`sudo apt install autoconf autopoint libglib2.0-dev libdbus-1-dev libtool`
 
 ## Build and installation
 
 
-    $ ./autogen
+    $ ./autogen.sh
     $ ./configure
     $ make
     $ sudo make install

@@ -42,7 +42,8 @@ const char *cpdbGroupTable[][2] = {
     {CPDB_OPTION_JOB_NAME,                      CPDB_GROUP_JOB_MGMT},
     {CPDB_OPTION_JOB_SHEETS,                    CPDB_GROUP_JOB_MGMT},
     {CPDB_OPTION_JOB_PRIORITY,                  CPDB_GROUP_JOB_MGMT},
-    {CPDB_OPTION_JOB_HOLD_UNTIL,                CPDB_GROUP_JOB_MGMT},
+    {CPDB_OPTION_BILLING_INFO,                  CPDB_GROUP_JOB_MGMT},
+    {CPDB_OPTION_JOB_HOLD_UNTIL,                CPDB_GROUP_JOB_MGMT}
     
 };
 

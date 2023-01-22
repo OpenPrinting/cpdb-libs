@@ -1,7 +1,8 @@
 #ifndef _CPDB_CPDB_H_
 #define _CPDB_CPDB_H_
 
-#include <glib.h>
+#define GETTEXT_PACKAGE "cpdb"
+#include <glib/gi18n-lib.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,11 +15,6 @@ extern "C" {
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <pwd.h>
-
-#include <libintl.h>
-#define _(String) dgettext (CPDB_GETTEXT_PACKAGE, String)
-#define gettext_noop(String) String
-#define N_(String) gettext_noop (String)
 
 #include <cpdb/backend-interface.h>
 #include <cpdb/frontend-interface.h>

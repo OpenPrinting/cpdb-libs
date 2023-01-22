@@ -12,7 +12,7 @@ cpdb_frontend_obj_t *cpdbGetNewFrontendObj(char *instance_name,
                                            cpdb_event_callback add_cb,
                                            cpdb_event_callback rem_cb)
 {
-    cpdb_frontend_obj_t *f = malloc(sizeof(cpdb_frontend_obj_t));
+    cpdb_frontend_obj_t *f = g_new0(cpdb_frontend_obj_t, 1);
     
     f->skeleton = print_frontend_skeleton_new();
     f->connection = NULL;
@@ -693,7 +693,7 @@ ________________________________________________ cpdb_printer_obj_t ____________
 
 cpdb_printer_obj_t *cpdbGetNewPrinterObj()
 {
-    cpdb_printer_obj_t *p = malloc(sizeof(cpdb_printer_obj_t));
+    cpdb_printer_obj_t *p = g_new0 (cpdb_printer_obj_t, 1);
     p->options = NULL;
     p->settings = cpdbGetNewSettings();
     return p;
@@ -711,7 +711,6 @@ void cpdbDeletePrinterObj(cpdb_printer_obj_t *p)
         g_object_unref(p->backend_proxy);
     if (p->options)
         cpdbDeleteOptions(p->options);
-
     if (p->settings)
         cpdbDeleteSettings(p->settings);
     
@@ -844,8 +843,6 @@ cpdb_option_t *cpdbGetOption(cpdb_printer_obj_t *p,
     }
 
     cpdbGetAllOptions(p);
-    if (!g_hash_table_contains(p->options->table, name))
-        return NULL;
     return (cpdb_option_t *)(g_hash_table_lookup(p->options->table, name));
 }
 
@@ -1400,7 +1397,7 @@ void cpdbAcquireDetails(cpdb_printer_obj_t *p,
         return;
     }
     
-    cpdb_async_obj_t *a = malloc(sizeof(cpdb_async_obj_t));
+    cpdb_async_obj_t *a = g_new0(cpdb_async_obj_t, 1);
     a->p = p;
     a->caller_cb = caller_cb;
     a->user_data = user_data;
@@ -1621,6 +1618,7 @@ cpdb_options_t *cpdbGetNewOptions()
                                      g_str_equal,
                                      NULL,
                                      (GDestroyNotify) cpdbDeleteOption);
+    o->media_count = 0;
     o->media = g_hash_table_new_full(g_str_hash,
                                      g_str_equal,
                                      NULL,
@@ -1788,7 +1786,7 @@ void cpdbUnpackOptions(int num_options,
             logdebug("  %s;\n", str);
             opt->supported_values[j] = cpdbGetStringCopy(str);
         }
-        g_hash_table_insert(options->table, name, opt);
+        g_hash_table_insert(options->table, opt->option_name, opt);
     }
     
     options->media_count = num_media;
@@ -1817,7 +1815,7 @@ void cpdbUnpackOptions(int num_options,
             media->margins[j].top = t; 
             media->margins[j].bottom = b;
 		}
-		g_hash_table_insert(options->media, name, media);
+		g_hash_table_insert(options->media, media->name, media);
 	}
     
 }

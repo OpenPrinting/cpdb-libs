@@ -39,13 +39,27 @@ typedef struct cpdb_margin_s cpdb_margin_t;
 typedef struct cpdb_media_s cpdb_media_t;
 typedef struct cpdb_job_s cpdb_job_t;
 
-typedef int (*cpdb_event_callback)(cpdb_printer_obj_t *);
+
+/**
+ * Callback for frontend updates
+ * 
+ * @param cpdb_frontend_obj_t*  frontend
+ */
+typedef void (*cpdb_event_callback)(cpdb_frontend_obj_t* f);
+
+/**
+ * Callback for printer updates
+ * 
+ * @param cpdb_frontend_obj_t*  frontend
+ * @param cpdb_printer_obj_t*   printer
+ */
+typedef void (*cpdb_printer_callback)(cpdb_frontend_obj_t *, cpdb_printer_obj_t *);
 
 /**
  * Callback for async functions
  *
- * @param int 		: success
- * @param void * 	: user_data
+ * @param int 		success
+ * @param void* 	user_data
  */
 typedef void (*cpdb_async_callback)(cpdb_printer_obj_t *, int, void *);
 
@@ -63,8 +77,8 @@ struct cpdb_frontend_obj_s
 
     int own_id;
     char *bus_name;
-    cpdb_event_callback add_cb;
-    cpdb_event_callback rem_cb;
+    cpdb_printer_callback add_cb;
+    cpdb_printer_callback rem_cb;
 
     int num_backends;
     GHashTable *backend; /**[backend name(like "CUPS" or "GCP")] ---> [BackendObj]**/
@@ -87,7 +101,7 @@ struct cpdb_frontend_obj_s
  * rem_cb : The callback function to call when a printer is removed
  *
  */
-cpdb_frontend_obj_t *cpdbGetNewFrontendObj(char *instance_name, cpdb_event_callback add_cb, cpdb_event_callback remove_cb);
+cpdb_frontend_obj_t *cpdbGetNewFrontendObj(char *instance_name, cpdb_printer_callback add_cb, cpdb_printer_callback remove_cb);
 void cpdbDeleteFrontendObj(cpdb_frontend_obj_t *f);
 
 /**
@@ -271,6 +285,12 @@ void cpdbFillBasicOptions(cpdb_printer_obj_t *, GVariant *);
  * Print the basic options of cpdb_printer_obj_t
  */
 void cpdbPrintBasicOptions(cpdb_printer_obj_t *);
+
+/**
+ * Print debug info about cpdb_printer_obj_t
+ * Like cpdbPrintBasicOptions but prints debug logs instead of printing to stdout
+ */
+void cpdbDebugPrinter(const cpdb_printer_obj_t *);
 
 gboolean cpdbIsAcceptingJobs(cpdb_printer_obj_t *);
 char *cpdbGetState(cpdb_printer_obj_t *);

@@ -31,6 +31,9 @@ extern "C" {
 #define CPDB_DEBUG_LEVEL   "CPDB_DEBUG_LEVEL"
 #define CPDB_DEBUG_LOGFILE "CPDB_DEBUG_LOGFILE"
 
+#define CPDB_PRINTER_ARRAY_ARGS "a(sssssbss)"
+#define CPDB_PRINTER_ARGS "(sssssbss)"
+
 #define CPDB_PRINTER_ADDED_ARGS "(sssssbss)"
 #define CPDB_JOB_ARGS "(ssssssi)"
 #define CPDB_JOB_ARRAY_ARGS "a(ssssssi)"

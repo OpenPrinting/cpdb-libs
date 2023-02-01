@@ -17,7 +17,11 @@
         <method name="GetBackendName">
             <arg name="backend_name" direction="out" type="s" />
         </method>
-        <method name="ActivateBackend"></method>
+        <method name="GetPrinterList">
+            <arg name="num_printers" direction="out" type="i" />
+            <!--printers contents: id, name, info, location, make & model, accepting jobs?, state, backend name-->
+            <arg name="printers" direction="out" type="a(v)" />
+        </method>
         <method name="getDefaultPrinter">
             <arg name="printer_id" direction="out" type="s"/>
         </method>

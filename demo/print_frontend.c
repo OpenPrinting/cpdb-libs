@@ -13,13 +13,13 @@ gpointer parse_commands(gpointer user_data);
 cpdb_frontend_obj_t *f;
 static const char *locale;
 
-static int add_printer_callback(cpdb_printer_obj_t *p)
+static void add_printer_callback(cpdb_frontend_obj_t *f, cpdb_printer_obj_t *p)
 {
     //printf("print_frontend.c : Printer %s added!\n", p->name);
     cpdbPrintBasicOptions(p);
 }
 
-static int remove_printer_callback(cpdb_printer_obj_t *p)
+static void remove_printer_callback(cpdb_frontend_obj_t *f, cpdb_printer_obj_t *p)
 {
     g_message("Removed Printer %s : %s!\n", p->name, p->backend_name);
     cpdbDeletePrinterObj(p);
@@ -35,8 +35,8 @@ static void acquire_details_callback(cpdb_printer_obj_t *p, int success, void *u
 
 int main(int argc, char **argv)
 {
-    cpdb_event_callback add_cb = (cpdb_event_callback)add_printer_callback;
-    cpdb_event_callback rem_cb = (cpdb_event_callback)remove_printer_callback;
+    cpdb_printer_callback add_cb = (cpdb_printer_callback)add_printer_callback;
+    cpdb_printer_callback rem_cb = (cpdb_printer_callback)remove_printer_callback;
 
     setlocale (LC_ALL, "");
     cpdbInit();

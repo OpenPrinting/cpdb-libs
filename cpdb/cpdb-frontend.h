@@ -43,25 +43,26 @@ typedef struct cpdb_job_s cpdb_job_t;
 /**
  * Callback for frontend updates
  * 
- * @param cpdb_frontend_obj_t*  frontend
+ * @param frontend_obj  Frontend instance to be updated
  */
-typedef void (*cpdb_event_callback)(cpdb_frontend_obj_t* f);
+typedef void (*cpdb_event_callback)(cpdb_frontend_obj_t* frontend_obj);
 
 /**
  * Callback for printer updates
  * 
- * @param cpdb_frontend_obj_t*  frontend
- * @param cpdb_printer_obj_t*   printer
+ * @param frontend_obj      Frontend instance
+ * @param printer_obj       Printer object updated
  */
-typedef void (*cpdb_printer_callback)(cpdb_frontend_obj_t *, cpdb_printer_obj_t *);
+typedef void (*cpdb_printer_callback)(cpdb_frontend_obj_t *frontend_obj, cpdb_printer_obj_t *printer_obj);
 
 /**
  * Callback for async functions
  *
- * @param int 		success
- * @param void* 	user_data
+ * @param printer_obj       Printer object
+ * @param status	        Success status
+ * @param user_data 	    User data
  */
-typedef void (*cpdb_async_callback)(cpdb_printer_obj_t *, int, void *);
+typedef void (*cpdb_async_callback)(cpdb_printer_obj_t *printer_obj, int status, void *user_data);
 
 /*********************definitions ***************************/
 
@@ -90,81 +91,112 @@ struct cpdb_frontend_obj_s
 };
 
 /**
- * Get a new cpdb_frontend_obj_t instance
- *
- * @params
- *
- * instance name: The suffix to be used for the dbus name for Frontend
- *              supply NULL for no suffix
- *
- * add_cb : The callback function to call when a new printer is added
- * rem_cb : The callback function to call when a printer is removed
- *
+ * Get a new cpdb_frontend_obj_t instance.
+ * 
+ * @param instance_name     Unique name for the frontend object, can be NULL
+ * @param add_cb            Callback function for when a new printer is added
+ * @param rem_cb            Callback function for when an old printer is removed
+ * 
+ * @return                  Frontend instance
  */
-cpdb_frontend_obj_t *cpdbGetNewFrontendObj(char *instance_name, cpdb_printer_callback add_cb, cpdb_printer_callback remove_cb);
-void cpdbDeleteFrontendObj(cpdb_frontend_obj_t *f);
+cpdb_frontend_obj_t *cpdbGetNewFrontendObj(const char *instance_name, cpdb_printer_callback add_cb, cpdb_printer_callback remove_cb);
 
 /**
- * Start the frontend D-Bus Service
+ * Free up a frontend instance.
+ * 
+ * @param frontend_obj      Frontend instance to be deleted
  */
-void cpdbConnectToDBus(cpdb_frontend_obj_t *);
+void cpdbDeleteFrontendObj(cpdb_frontend_obj_t *frontend_obj);
 
 /**
- * Notify Backend services before stopping Frontend
+ * Connect to DBus, activate the CPDB backends and fetch printers.
+ * 
+ * @param frontend_obj      Frontend instance to connect to DBus
  */
-void cpdbDisconnectFromDBus(cpdb_frontend_obj_t *);
+void cpdbConnectToDBus(cpdb_frontend_obj_t *frontend_obj);
 
 /**
- * Discover the currently installed backends and activate them
- *
- *
- * Reads the CPDB_DBUS_DIR folder to find the files installed by
- * the respective backends ,
- * For eg:  org.openprinting.Backend.XYZ
- *
- * XYZ = Backend suffix, using which it will be identified henceforth
+ * Disconnect from the DBus.
+ * 
+ * Use cpdbDeleteFrontendObj() directly instead
+ * which internally calls this function before deallocating the instance
+ * 
+ * @param frontend_obj      Frontend instance connected to DBus
  */
-void cpdbActivateBackends(cpdb_frontend_obj_t *);
+void cpdbDisconnectFromDBus(cpdb_frontend_obj_t *frontend_obj);
 
 /**
  * The default behaviour of cpdb_frontend_obj_t is to use the
  * settings previously saved to disk the last time any print dialog ran.
  *
  * To ignore the last saved settings, you need to explicitly call this function
- * after cpdbGetNewFrontendObj
+ * after cpdbGetNewFrontendObj()
+ * 
+ * @param frontend_obj      Frontend instance
  */
-void cpdbIgnoreLastSavedSettings(cpdb_frontend_obj_t *);
+void cpdbIgnoreLastSavedSettings(cpdb_frontend_obj_t *frontend_obj);
 
 /**
- * Add the printer to the cpdb_frontend_obj_t instance
+ * Add the printer to the frontend instance
+ * 
+ * @param frontend_obj      Frontend instance
+ * @param printer_obj       Printer object
+ * 
+ * @return                  Success status
  */
-gboolean cpdbAddPrinter(cpdb_frontend_obj_t *f, cpdb_printer_obj_t *p);
+gboolean cpdbAddPrinter(cpdb_frontend_obj_t *frontend_obj, cpdb_printer_obj_t *printer_obj);
 
 /**
- * Remove the printer from cpdb_frontend_obj_t
+ * Remove the printer from the frontend instance.
  *
- * @returns
- * The cpdb_printer_obj_t* struct corresponding to the printer just removed,
- * or NULL if the removal was unsuccesful
+ * @param frontend_obj      Frontend instance
+ * @param printer_id        Printer ID
+ * @param backend_name      Backend name
+ * 
+ * @return
+ * The printer object corresponding to the printer just removed,
+ * or NULL if the removal was unsuccesful.
  *
- * The cpdb_printer_obj_t removed is not deallocated.
- * The caller is responsible for deallocation
+ * The caller is responsible for deallocating the printer object.
  */
 cpdb_printer_obj_t *cpdbRemovePrinter(cpdb_frontend_obj_t *f, const char *printer_id, const char *backend_name);
-void cpdbRefreshPrinterList(cpdb_frontend_obj_t *f);
 
 /**
- * Hide the remote printers of the backend
+ * Signal CPDB backends to refresh their printer list.
+ * 
+ * @param frontend_obj      Frontend instance
  */
-void cpdbHideRemotePrinters(cpdb_frontend_obj_t *f);
-void cpdbUnhideRemotePrinters(cpdb_frontend_obj_t *f);
+void cpdbRefreshPrinterList(cpdb_frontend_obj_t *frontend_obj);
+
+/**
+ * Hide the remote printers of the backend.
+ * 
+ * @param frontend_obj      Frontend instance
+ */
+void cpdbHideRemotePrinters(cpdb_frontend_obj_t *frontend_obj);
+
+/**
+ * Unhide the remote printers of the backend.
+ * 
+ * @param frontend_obj      Frontend instance
+ */
+void cpdbUnhideRemotePrinters(cpdb_frontend_obj_t *frontend_obj);
 
 /**
  * Hide those (temporary) printers which have been discovered by the backend,
- * but haven't been yet set up locally
+ * but haven't been yet set up locally.
+ * 
+ * @param frontend_obj      Frontend instance
  */
-void cpdbHideTemporaryPrinters(cpdb_frontend_obj_t *f);
-void cpdbUnhideTemporaryPrinters(cpdb_frontend_obj_t *f);
+void cpdbHideTemporaryPrinters(cpdb_frontend_obj_t *frontend_obj);
+
+/**
+ * Unhide those (temporary) printers which have been discovered by the backend,
+ * but haven't been yet set up locally.
+ * 
+ * @param frontend_obj      Frontend instance
+ */
+void cpdbUnhideTemporaryPrinters(cpdb_frontend_obj_t *frontend_obj);
 
 /**
  * Read the file installed by the backend and create a proxy object
@@ -173,73 +205,64 @@ void cpdbUnhideTemporaryPrinters(cpdb_frontend_obj_t *f);
 PrintBackend *cpdbCreateBackendFromFile(GDBusConnection *, const char *);
 
 /**
- * Find the cpdb_printer_obj_t instance with a particular id ans backend name.
- */
-cpdb_printer_obj_t *cpdbFindPrinterObj(cpdb_frontend_obj_t *, const char *printer_id, const char *backend_name);
-
-/**
- * Get the default printer for a particular backend
- *
- * @param backend_name : The name of the backend
- *                          Can be just the suffix("CUPS")
- *                          or
- *                          the complete name ("org.openprinting.Backend.CUPS")
- */
-cpdb_printer_obj_t *cpdbGetDefaultPrinterForBackend(cpdb_frontend_obj_t *, const char *backend_name);
-
-/**
- * Returns a GList of all default printers in given config file
- *
- * @param path : Relative path of the config file with default printers
- *
- */
-GList *cpdbLoadDefaultPrinters(char *path);
-
-/**
- * Get a single default printer
- * Always returns a printer, unless there are no printers connected to the frontend
- *
- */
-cpdb_printer_obj_t *cpdbGetDefaultPrinter(cpdb_frontend_obj_t *);
-
-/**
- * Set a printer as default in the given config file
+ * Find the cpdb_printer_obj_t instance with a particular id and backend name.
  * 
- * @param path : Relative path of the config file with default printers
- * @param p : PrinterObj to mark as default
- *
- * @returns : 1 on success, 0 on failure
+ * @param frontend_obj      Frontend instance
+ * @param printer_id        Printer ID
+ * @param backend_name      Backend name
+ * 
+ * @return                  Printer object if found, NULL otherwise.
  */
-int cpdbSetDefaultPrinter(char *path, cpdb_printer_obj_t *p);
+cpdb_printer_obj_t *cpdbFindPrinterObj(cpdb_frontend_obj_t *frontend_obj, const char *printer_id, const char *backend_name);
 
 /**
- * Set a printer as user default
- * Takes care of duplicate entries in the config file
- *
- * @returns : 1 on success, 0 on failure
+ * Get the default printer for a particular CPDB backend.
+ * 
+ * @param frontend_obj      Frontend instance
+ * @param backend_name      Backend name
+ * 
+ * @return                  Default printer for backend if found, NULL otherwise
  */
-int cpdbSetUserDefaultPrinter(cpdb_printer_obj_t *p);
+cpdb_printer_obj_t *cpdbGetDefaultPrinterForBackend(cpdb_frontend_obj_t *frontend_obj, const char *backend_name);
 
 /**
- * Set a printer as system wide default
- * Takes care of duplicate entries in the config file
+ * Get the most preferred default printer.
+ * Always returns a printer, unless there are no printers connected to the frontend.
  *
- * @returns : 1 on success, 0 on failure
+ * @param frontend_obj      Frontend instance
+ * 
+ * @return                  Default printer if any exists, NULL otherwise
  */
-int cpdbSetSystemDefaultPrinter(cpdb_printer_obj_t *p);
+cpdb_printer_obj_t *cpdbGetDefaultPrinter(cpdb_frontend_obj_t *frontend_obj);
 
 /**
- * Get the list of (all/active) jobs from all the backends
+ * Set a printer as user default.
  *
- * @param j : pointer to a cpdb_job_t array; the retrieved job list array is stored at this location
- * @param active_only : when set to true , retrieves only the active jobs;
- *                      otherwise fetches all(active + completed + stopped) jobs
- *                      Retrieves jobs for all users.
+ * @param printer_obj       Printer object
+ * 
+ * @return                  TRUE on success, FALSE on failure
+ */
+gboolean cpdbSetUserDefaultPrinter(cpdb_printer_obj_t *p);
+
+/**
+ * Set a printer as system wide default.
  *
- * returns : number of jobs(i.e. length of the cpdb_job_t array)
+ * @param printer_obj       Printer object
+ * 
+ * @return                  TRUE on success, FALSE on failure
+ */
+gboolean cpdbSetSystemDefaultPrinter(cpdb_printer_obj_t *p);
+
+/**
+ * Get the list of (all/active) jobs from all the backends for all users.
+ *
+ * @param jobs              Pointer to a cpdb_job_t array. The retrieved job list array is stored at this location
+ * @param active_only       If TRUE, retrieves only the active jobs, otherwise retrieves all(active + completed + stopped) jobs
+ *
+ * @return                  Number of jobs (i.e. length of the cpdb_job_t array)
  *
  */
-int cpdbGetAllJobs(cpdb_frontend_obj_t *, cpdb_job_t **j, gboolean active_only);
+int cpdbGetAllJobs(cpdb_frontend_obj_t *frontend_obj, cpdb_job_t **jobs, gboolean active_only);
 
 /*******************************************************************************************/
 
@@ -269,211 +292,252 @@ struct cpdb_printer_obj_s
     cpdb_settings_t *settings;
 };
 
+/**
+ * Get a new empty printer object.
+ * 
+ * @return                  Printer object
+ */
 cpdb_printer_obj_t *cpdbGetNewPrinterObj();
 
 /**
- * Frees up memory
+ * Free up a printer object.
+ * 
+ * @param printer_obj       Printer object
  */
-void cpdbDeletePrinterObj(cpdb_printer_obj_t *p);
+void cpdbDeletePrinterObj(cpdb_printer_obj_t *printer_obj);
 
 /**
- * Fill the basic options of cpdb_printer_obj_t from the GVariant returned with the printerAdded signal
+ * Print basic printer info to stdout.
+ * 
+ * @param printer_obj       Printer object
  */
-void cpdbFillBasicOptions(cpdb_printer_obj_t *, GVariant *);
+void cpdbPrintBasicOptions(cpdb_printer_obj_t *printer_obj);
 
 /**
- * Print the basic options of cpdb_printer_obj_t
+ * Print basic printer info to debug logs.
+ * 
+ * @param printer_obj       Printer object
  */
-void cpdbPrintBasicOptions(cpdb_printer_obj_t *);
+void cpdbDebugPrinter(const cpdb_printer_obj_t *printer_obj);
 
 /**
- * Print debug info about cpdb_printer_obj_t
- * Like cpdbPrintBasicOptions but prints debug logs instead of printing to stdout
+ * Update and return whether printer is accepting jobs.
+ * 
+ * @param printer_obj       Printer object
+ * 
+ * @return                  TRUE if printer is accepting jobs, otherwise FALSE
  */
-void cpdbDebugPrinter(const cpdb_printer_obj_t *);
-
-gboolean cpdbIsAcceptingJobs(cpdb_printer_obj_t *);
-char *cpdbGetState(cpdb_printer_obj_t *);
+gboolean cpdbIsAcceptingJobs(cpdb_printer_obj_t *printer_obj);
 
 /**
- * Get all the advanced supported options for the printer.
- * This function populates the 'options' variable of the cpdb_printer_obj_t structure,
- * and returns the same.
+ * Update and return printer status.
+ * 
+ * @param printer_obj       Printer object
+ * 
+ * @return                  Printer status
+ */
+char *cpdbGetState(cpdb_printer_obj_t *printer_obj);
+
+/**
+ * Get all the different options and values supported by a printer.
+ * 
+ * @param printer_obj       Printer object
+ * 
+ * @return                  Options struct
+ */
+cpdb_options_t *cpdbGetAllOptions(cpdb_printer_obj_t *printer_obj);
+
+/**
+ * Get a single cpdb_option_t struct corresponding to an option name for a printer.
  *
- * If the options haven't been fetched before, they are fetched from the backend.
- * Else, they previously fetched 'options' are returned
- *
- * Each option has
- *  option name,
- *  default value,
- *  number of supported values,
- *  array of supported values
+ * @param printer_obj       Printer object
+ * @param option_name       Option name
+ * 
+ * @return                  Option struct if it exists, otherwise NULL
  */
-cpdb_options_t *cpdbGetAllOptions(cpdb_printer_obj_t *);
+cpdb_option_t *cpdbGetOption(cpdb_printer_obj_t *printer_obj, const char *option_name);
 
 /**
- * Get a single cpdb_option_t struct corresponding to a particular name.
+ * Get the default option value for a printer.
  *
- * @returns
- * Option if the option was found
- * NULL if the option with desired name doesn't exist
+ * @param printer_obj       Printer object
+ * @param option_name       Option name
+ * 
+ * @return                  Default value if exists.
+ *                          "NA" if option is present, but default value isn't set.
+ *                          NULL if option doesn't exist.
  */
-cpdb_option_t *cpdbGetOption(cpdb_printer_obj_t *p, const char *name);
+char *cpdbGetDefault(cpdb_printer_obj_t *p, const char *option_name);
 
 /**
- * Get the default value corresponding to the option name
+ * Get the option value set for a printer.
+ * 
+ * @param printer_obj       Printer object
+ * @param option_name       Option name
  *
- * @returns
- * default value(char*) if the option with the desired name exists
- * "NA" if the option is present , but default value isn't set
- * NULL if the option with the particular name doesn't exist.
- *
+ * @return                  Value if set, NULL otherwise
  */
-char *cpdbGetDefault(cpdb_printer_obj_t *p, const char *name);
+char *cpdbGetSetting(cpdb_printer_obj_t *p, const char *option_name);
 
 /**
- * Get the value of the setting corresponding to the name
+ * Get the option value set for a printer. If not set, get the default option value.
  *
- * @returns
- * setting value(char*) if the setting with the desired name exists
- * NULL if the setting with the particular name doesn't exist.
- *
+ * @param printer_obj       Printer object
+ * @param option_name       Option name
+ * 
+ * @return                  Current value for an option
  */
-char *cpdbGetSetting(cpdb_printer_obj_t *p, const char *name);
+char *cpdbGetCurrent(cpdb_printer_obj_t *printer_obj, const char *option_name);
 
 /**
- * Get the 'current value' of the attribute with the particular name
+ * Get the number of active jobs(pending + paused + printing) on a printer.
+ * 
+ * @param printer_obj       Printer object
+ * 
+ * @return                  Number of active jobs
+ */
+int cpdbGetActiveJobsCount(cpdb_printer_obj_t *printer_obj);
+
+/**
+ * Submit a file for printing, using the settings set previously.
+ * 
+ * @param printer_obj       Printer object
+ * @param file_path         Path of file to print
+ * 
+ * @return                  Job ID if created, NULL otherwise
+ */
+char *cpdbPrintFile(cpdb_printer_obj_t *printer_obj, const char *file_path);
+
+/**
+ * Submit file for printing to another file, using the settings set previously.
+ * 
+ * @param printer_obj       Printer object 
+ * @param file_path         Path of file to print
+ * @param final_file_path   Final path to print to
+ * 
+ * @return                  Job ID if created, NULL otherwise
+ */
+char *cpdbPrintFilePath(cpdb_printer_obj_t *printer_obj, const char *file_path, const char *final_file_path);
+
+/**
+ * Set an option value for a printer.
+ * Updates the value if one is already set.
  *
- * If the setting with that name exists, that is returned ,
- * else the default value is returned;
- * i.e. , the settings override the defaults
+ * @param printer_obj       Printer object
+ * @param option_name       Option name
+ * @param value             Value to set
  */
-char *cpdbGetCurrent(cpdb_printer_obj_t *p, const char *name);
+void cpdbAddSettingToPrinter(cpdb_printer_obj_t *printer_obj, const char *option_name, const char *value);
 
 /**
- * Get number of active jobs(pending + paused + printing)
- * for the printer
- */
-int cpdbGetActiveJobsCount(cpdb_printer_obj_t *);
-
-/**
- * Submits a single file for printing, using the settings stored in
- * p->settings
- */
-char *cpdbPrintFile(cpdb_printer_obj_t *p, const char *file_path);
-char *cpdbPrintFilePath(cpdb_printer_obj_t *p, const char *file_path, const char *final_file_path);
-
-/**
- * Wrapper for the cpdbAddSetting(cpdb_settings_t* , ..) function.
- * Adds the desired setting to p->settings.
- * Updates the value if the setting already exits.
+ * Clear the option value set for a printer.
  *
- * @param name : name of the setting
- * @param val : value of the setting
+ * @param printer_obj       Printer object
+ * @param option_name       Option name
+ * 
+ * @return                  TRUE if set value successfully cleared, FALSE otherwise
  */
-void cpdbAddSettingToPrinter(cpdb_printer_obj_t *p, const char *name, const char *val);
+gboolean cpdbClearSettingFromPrinter(cpdb_printer_obj_t *printer_obj, const char *option_name);
 
 /**
- * Wrapper for the cpdbClearSetting(cpdb_settings_t* , ..) function.
- * clear the desired setting from p->settings.
+ * Cancel a job on a printer.
  *
- * @param name : name of the setting
+ * @param printer_obj       Printer object
+ * @param job_id            Job ID for job to cancel
+ * 
+ * @return                  TRUE if job cancelled, FALSE otherwise
  */
-gboolean cpdbClearSettingFromPrinter(cpdb_printer_obj_t *p, const char *name);
-
-/**
- * Cancel a job on the printer
- *
- * @returns
- * TRUE if job cancellation was successful
- * FALSE otherwise
- */
-gboolean cpdbCancelJob(cpdb_printer_obj_t *p, const char *job_id);
+gboolean cpdbCancelJob(cpdb_printer_obj_t *printer_obj, const char *job_id);
 
 /**
  * Serialize the cpdb_printer_obj_t and save it to a file
  * This also keeps the respective backend of the printer alive.
  *
  * This cpdb_printer_obj_t* can then be resurrecuted from the file using the
- * cpdbResurrectPrinterFromFile() function
+ * cpdbResurrectPrinterFromFile() function.
+ * 
+ * @param printer_obj       Printer object
+ * @param file              File path to save to
+ * @param frontend_obj      Frontend instance
  */
-void cpdbPicklePrinterToFile(cpdb_printer_obj_t *p, const char *filename, const cpdb_frontend_obj_t *parent_dialog);
+void cpdbPicklePrinterToFile(cpdb_printer_obj_t *p, const char *file, const cpdb_frontend_obj_t *frontend_obj);
 
 /**
  * Recreates a cpdb_printer_obj_t from its serialized form stored in the given format
  * and returns it.
  *
- * @returns
- * the cpdb_printer_obj_t* if deserialization was succesfull
- * NULL otherwise
+ * @param file              File path to read from
+ * 
+ * @return                  Printer object if deserialization was succesfull, NULL otherwise
  */
-cpdb_printer_obj_t *cpdbResurrectPrinterFromFile(const char *filename);
+cpdb_printer_obj_t *cpdbResurrectPrinterFromFile(const char *file);
 
 /**
- * Finds human readable translation of option name
+ * Get the translation for an option name provided by a printer.
  * 
- * @param p : printer object to which option belongs
- * @param option_name : name of option
- * @param locale : language for translation
+ * @param printer_obj       Printer object
+ * @param option_name       Option name
+ * @param lang              BCP47 language tag to be used for translation
  * 
- * @returns
- * human readable name of option translated to given language
+ * @return                  Translated name
  */
-char *cpdbGetOptionTranslation(cpdb_printer_obj_t *p, const char *option_name, const char *lang);
+char *cpdbGetOptionTranslation(cpdb_printer_obj_t *printer_obj, const char *option_name, const char *lang);
 
 /**
- * Finds human readable translation of choice name
+ * Get the translation for an option value provided by a printer.
  * 
- * @param p : printer object to which option belongs
- * @param option_name : name of option
- * @param choice_name : name of choice
- * @param locale : language for translation
+ * @param printer_obj       Printer object
+ * @param option_name       Option name
+ * @param choice_name       Option value
+ * @param lang              BCP47 language tag to be used for translation
  * 
- * @returns
- * human readable name of choice translated to given language
+ * @return                  Translated value
  */
-char *cpdbGetChoiceTranslation(cpdb_printer_obj_t *p, const char *option_name,
-                                const char *choice_name, const char *locale);
+char *cpdbGetChoiceTranslation(cpdb_printer_obj_t *printer_obj, const char *option_name, const char *choice_name, const char *lang);
 
 /**
- * Finds human readable translation of group name
+ * Get the translation for an option group provided by a printer.
  * 
- * @param p : printer object to which option belongs
- * @param group_name : name of group
- * @param locale : locale for translation
+ * @param printer_obj       Printer object
+ * @param group_name        Group name
+ * @param lang              BCP47 language tag to be used for translation
  * 
- * @returns
- * human readable name of group translated to given language
+ * @return                  Translated name
  */
-char *cpdbGetGroupTranslation(cpdb_printer_obj_t *p, const char *group_name, const char *locale);
+char *cpdbGetGroupTranslation(cpdb_printer_obj_t *printer_obj, const char *group_name, const char *lang);
 
 /**
- * Get a single cpdb_media_t struct corresponding to the give media name
+ * Get the cpdb_media_t struct corresponding to a media-size supported by a printer.
  *
- * @param media : name of media-size
+ * @param printer_obj       Printer object
+ * @param media_name        Media-size name
+ * 
+ * @return                  Media struct if media-size exists, NULL otherwise
  */
-cpdb_media_t *cpdbGetMedia(cpdb_printer_obj_t *p, const char *media);
+cpdb_media_t *cpdbGetMedia(cpdb_printer_obj_t *printer_obj, const char *media_name);
 
 /**
- * Finds the dimension for a given media-size
+ * Get the dimensions of a media-size supported by a printer.
  *
- * @param media : name of media-size
- * @param width : address of width of media-size to be returned
- * @param length : address of length of media-size to be returned
+ * @param printer_obj       Printer object
+ * @param media_name        Media-size name
+ * @param width             Address for storing media width
+ * @param length            Address for storing media length
  *
- * @returns : 1 on success, 0 on failure
+ * @return                  1 if media-size exists, 0 otherwise
  */
-int cpdbGetMediaSize(cpdb_printer_obj_t *p, const char *media, int *width, int *length);
+int cpdbGetMediaSize(cpdb_printer_obj_t *printer_obj, const char *media_name, int *width, int *length);
 
 /**
- * Find the margins for a given media-size
+ * Get the media margins for a media-size supported by a printer.
+ * 
+ * @param printer_obj       Printer object
+ * @param media_name        Media-size name
+ * @param margins           Address for storing margins array
  *
- * @param media : name of media-size
- * @param margins : margins array
- *
- * @returns : number of set of margins supported by given media size
+ * @returns                 Number of margins supported
  */
-int cpdbGetMediaMargins(cpdb_printer_obj_t *p, const char *media, cpdb_margin_t **margins);
+int cpdbGetMediaMargins(cpdb_printer_obj_t *printer_obj, const char *media_name, cpdb_margin_t **margins);
 
 struct cpdb_async_obj_s
 {
@@ -483,11 +547,14 @@ struct cpdb_async_obj_s
 };
 
 /**
- * Asynchronously acquires printer details
+ * Asynchronously fetch printer details and options.
  *
- * @param caller_cb : callback function
+ * @param printer_obj       Printer object
+ * @param caller_cb         Callback function
+ * @param user_data         User data to pass to callback function
+ * 
  */
-void cpdbAcquireDetails(cpdb_printer_obj_t *p, cpdb_async_callback caller_cb, void *user_data);
+void cpdbAcquireDetails(cpdb_printer_obj_t *printer_obj, cpdb_async_callback caller_cb, void *user_data);
 
 /************************************************************************************************/
 /**
@@ -508,31 +575,36 @@ struct cpdb_settings_s
 };
 
 /**
- * Get an empty cpdb_settings_t struct with no 'settings' in it
+ * Get a new empty settings object.
+ * 
+ * @return                  Settings object
  */
 cpdb_settings_t *cpdbGetNewSettings();
 
 /**
- * Copy settings from source to dest;
- *
- * The previous values in dest will be overwritten
+ * Copy settings from source to destination.
+ * The previous values in dest will be overwritten.
+ * 
+ * @param source            Source settings
+ * @param dest              Destination settings
  */
 void cpdbCopySettings(const cpdb_settings_t *source, cpdb_settings_t *dest);
 
 /**
- * Add the particular 'setting' to the cpdb_settings_t struct
+ * Add the particular 'setting' to the settings object.
  * If the setting already exists, its value is updated instead.
  *
- * Eg. cpdbAddSetting(s,"copies","1")
+ * @param setting_obj       Settings object
+ * @param option_name       Option name
+ * @param value             Option value
  */
-void cpdbAddSetting(cpdb_settings_t *, const char *name, const char *val);
+void cpdbAddSetting(cpdb_settings_t *setting_obj, const char *option_name, const char *value);
 
 /**
  * Clear the setting specified by @name
  *
- * @returns
- * TRUE , if the setting was cleared
- * FALSE , if the setting wasn't there and thus couldn't be cleared
+ * @return                  TRUE , if the setting was cleared
+ *                          FALSE , if the setting wasn't there and thus couldn't be cleared
  */
 gboolean cpdbClearSetting(cpdb_settings_t *, const char *name);
 
@@ -543,23 +615,28 @@ gboolean cpdbClearSetting(cpdb_settings_t *, const char *name);
 GVariant *cpdbSerializeToGVariant(cpdb_settings_t *s);
 
 /**
- * Save the settings to disk ,
+ * Save the settings to disk,
  * i.e write them to CPDB_PRINT_SETTINGS_FILE
+ * 
+ * @param settings_obj      Settings object
  */
-void cpdbSaveSettingsToDisk(cpdb_settings_t *s);
+void cpdbSaveSettingsToDisk(cpdb_settings_t *settings_obj);
 
 /**
  * Reads the serialized settings stored in
- *  CPDB_PRINT_SETTINGS_FILE and creates a cpdb_settings_t* struct from it
- *
- * The caller is responsible for freeing the returned cpdb_settings_t*
+ * CPDB_PRINT_SETTINGS_FILE and creates a cpdb_settings_t* struct from it.
+ * The caller is responsible for freeing the returned settings object.
+ * 
+ * @return                  Settings object
  */
 cpdb_settings_t *cpdbReadSettingsFromDisk();
 
 /**
- * Frees up memory
+ * Free up a settings object.
+ * 
+ * @param settings_obj      Settings object
  */
-void cpdbDeleteSettings(cpdb_settings_t *);
+void cpdbDeleteSettings(cpdb_settings_t *settings_obj);
 
 /************************************************************************************************/
 /**
@@ -576,11 +653,15 @@ struct cpdb_options_s
 
 /**
  * Get an empty cpdb_options_t struct with no 'options' in it
+ * 
+ * @return                  Options object
  */
 cpdb_options_t *cpdbGetNewOptions();
 
 /**
- * Frees up memory 
+ * Free up an options object.
+ * 
+ * @param options           Options object
  */
 void cpdbDeleteOptions(cpdb_options_t *);
 
@@ -597,8 +678,17 @@ struct cpdb_option_s
     char **supported_values;
     char *default_value;
 };
+
+/**
+ * Print info about a printer option to stdout.
+ * 
+ * @param opt               Option object
+ */
 void cpdbPrintOption(const cpdb_option_t *opt);
 
+/**
+ * @param opt               Option object
+ */
 void cpdbDeleteOption(cpdb_option_t *);
 
 /************************************************************************************************/
@@ -631,8 +721,19 @@ struct cpdb_media_s
     cpdb_margin_t *margins;
 };
 
-void cpdbPrintMedia(cpdb_media_t *);
-void cpdbDeleteMedia(cpdb_media_t *);
+/**
+ * Print info about media-size to stdout.
+ * 
+ * @param media             Media-size object
+ */
+void cpdbPrintMedia(cpdb_media_t *media);
+
+/**
+ * Free up a media-size object.
+ * 
+ * @param media             Media-size object
+ */
+void cpdbDeleteMedia(cpdb_media_t *media);
 
 /************************************************************************************************/
 /**
@@ -650,16 +751,6 @@ struct cpdb_job_s
     char *submitted_at;
     int size;
 };
-void cpdbUnpackJobArray(GVariant *var, int num_jobs, cpdb_job_t *jobs, char *backend_name);
-/**
- * ________________________________utility functions__________________________
- */
-
-/**
- * 'Unpack' (Deserialize) the GVariant returned in cpdbGetAllOptions
- * and fill the cpdb_options_t structure approriately
- */
-void cpdbUnpackOptions(int num_options, GVariant *var, int num_media, GVariant *media_var, cpdb_options_t *options);
 
 #ifdef __cplusplus
 }

@@ -1,14 +1,56 @@
 #include "cpdb-frontend.h"
 
+static void                 on_printer_added                (GDBusConnection *          connection,
+                                                             const gchar *              sender_name,
+                                                             const gchar *              object_path,
+                                                             const gchar *              interface_name,
+                                                             const gchar *              signal_name,
+                                                             GVariant *                 parameters,
+                                                             gpointer                   user_data);
+static void                 on_printer_removed              (GDBusConnection *          connection,
+                                                             const gchar *              sender_name,
+                                                             const gchar *              object_path,
+                                                             const gchar *              interface_name,
+                                                             const gchar *              signal_name,
+                                                             GVariant *                 parameters,
+                                                             gpointer                   user_data);
+
+static void                 on_name_acquired                (GDBusConnection *          connection,
+                                                             const gchar *              name,
+                                                            gpointer                   user_data);
+static void                 on_name_lost                    (GDBusConnection *          connection,
+                                                             const gchar *              name,
+                                                             gpointer                   user_data);
+
+static void                 fetchPrinterListFromBackend     (cpdb_frontend_obj_t *      frontend_obj,
+                                                             const char *               backend);
+                                             
+static void                 cpdbActivateBackends            (cpdb_frontend_obj_t *      frontend_obj);
+
+static GList *              cpdbLoadDefaultPrinters         (const char *               path);
+
+static int                  cpdbSetDefaultPrinter           (const char *               path,
+                                                             cpdb_printer_obj_t *       printer_obj);
+
+static void                 cpdbFillBasicOptions            (cpdb_printer_obj_t *       printer_obj,
+                                                             GVariant *                 variant);
+
+static void                 cpdbUnpackOptions               (int                        num_options,
+                                                             GVariant *                 var,
+                                                             int                        num_media,
+                                                             GVariant *                 media_var,
+                                                             cpdb_options_t *           options);
+static void                 cpdbUnpackJobArray              (GVariant *                 var,
+                                                             int                        num_jobs,
+                                                             cpdb_job_t *               jobs,
+                                                             char *                     backend_name);
+
 /**
 ________________________________________________ cpdb_frontend_obj_t __________________________________________
 
 **/
-/**
- * These static functions are callbacks used by the actual cpdb_frontend_obj_t functions.
- */
 
-cpdb_frontend_obj_t *cpdbGetNewFrontendObj(char *instance_name,
+cpdb_frontend_obj_t *cpdbGetNewFrontendObj(const char *instance_name,
                                            cpdb_printer_callback add_cb,
                                            cpdb_printer_callback rem_cb)
 {
@@ -239,7 +281,7 @@ static void fetchPrinterListFromBackend(cpdb_frontend_obj_t *f, const char *back
     }
 }
 
-void cpdbActivateBackends(cpdb_frontend_obj_t *f)
+static void cpdbActivateBackends(cpdb_frontend_obj_t *f)
 {
     DIR *d;
     int len;
@@ -456,7 +498,7 @@ cpdb_printer_obj_t *cpdbGetDefaultPrinterForBackend(cpdb_frontend_obj_t *f,
     return p;
 }
 
-GList *cpdbLoadDefaultPrinters(char *path)
+GList *cpdbLoadDefaultPrinters(const char *path)
 {
     FILE *fp;
     char buf[CPDB_BSIZE];
@@ -569,7 +611,7 @@ found:
     return default_printer;
 }
 
-int cpdbSetDefaultPrinter(char *path,
+int cpdbSetDefaultPrinter(const char *path,
                           cpdb_printer_obj_t *p)
 {
     FILE *fp;

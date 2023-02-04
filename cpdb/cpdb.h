@@ -52,32 +52,69 @@ typedef enum {
  */
 void cpdbInit();
 
-/* Convert string to gboolean */
+/**
+ * Convert string to gboolean.
+ */
 gboolean cpdbGetBoolean(const char *);
-/* Concatenate two strings */
+
+/**
+ * Concatenate two strings.
+ */
 char *cpdbConcat(const char *s1, const char *s2);
-/* Concatenate two strings with separator "#" */
+
+/**
+ * Concatenate two strings with separator "#".
+ */
 char *cpdbConcatSep(const char *s1, const char *s2);
-/* Concatenate two paths */
+
+/**
+ * Concatenate two paths.
+ */
 char *cpdbConcatPath(const char *s1, const char *s2);
-/* Get string copy */
+
+/**
+ * Get string copy.
+ */
 char *cpdbGetStringCopy(const char *s);
-/* Get directory for user configuration files */
+
+/**
+ * Get directory for user configuration files.
+ */
 char *cpdbGetUserConfDir();
-/* Get directory for system wide configuration files */
+
+/**
+ * Get directory for system wide configuration files.
+ */
 char *cpdbGetSysConfDir();
-/* Get absolute path from relative path */
+
+/**
+ * Get absolute path from relative path.
+ */
 char *cpdbGetAbsolutePath(const char *file_path);
-/* Extract file name for path */
+
+/**
+ * Extract file name for path.
+ */
 char *cpdbExtractFileName(const char* file_path);
-/* Get a group for given option name */
+
+/**
+ * Get a group for given option name.
+ */
 char *cpdbGetGroup(const char *option_name);
-/* Get translation for given group name */
+
+/**
+ * Get translation for given group name.
+ */
 char *cpdbGetGroupTranslation2(const char *group_name, const char *locale);
 
-/* Format and print debug message for frontend */
+/**
+ * Format and print debug message for frontend.
+ */
 void cpdbFDebugPrintf(CpdbDebugLevel msg_lvl, const char *fmt, ...);
-/* Format and print debug message for backends */
+
+/**
+ * Format and print debug message for backends.
+ */
 void cpdbBDebugPrintf(CpdbDebugLevel msg_lvl, const char *backend_name, const char *fmt, ...);
 
 /* Packing/Unpacking utility functions */

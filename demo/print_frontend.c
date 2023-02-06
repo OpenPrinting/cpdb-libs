@@ -13,16 +13,82 @@ gpointer parse_commands(gpointer user_data);
 cpdb_frontend_obj_t *f;
 static const char *locale;
 
-static void add_printer_callback(cpdb_frontend_obj_t *f, cpdb_printer_obj_t *p)
+static void printBasicOptions(const cpdb_printer_obj_t *p)
 {
-    //printf("print_frontend.c : Printer %s added!\n", p->name);
-    cpdbPrintBasicOptions(p);
+    printf("-------------------------\n");
+    printf("Printer %s\n", p->id);
+    printf("name: %s\n", p->name);
+    printf("location: %s\n", p->location);
+    printf("info: %s\n", p->info);
+    printf("make and model: %s\n", p->make_and_model);
+    printf("accepting jobs? %s\n", (p->accepting_jobs ? "yes" : "no"));
+    printf("state: %s\n", p->state);
+    printf("backend: %s\n", p->backend_name);
+    printf("-------------------------\n\n");
 }
 
-static void remove_printer_callback(cpdb_frontend_obj_t *f, cpdb_printer_obj_t *p)
+static void printMedia(const cpdb_media_t *media)
 {
-    g_message("Removed Printer %s : %s!\n", p->name, p->backend_name);
-    cpdbDeletePrinterObj(p);
+    printf("[+] Media: %s\n", media->name);
+    printf("   * width = %d\n", media->width);
+    printf("   * length = %d\n", media->length);
+    printf(" --> Supported margins: %d\n", media->num_margins);
+    printf("     left, right, top, bottom\n");
+    for (int i = 0; i < media->num_margins; i++)
+    {
+        printf("     * %d, %d, %d, %d,\n",
+               media->margins[i].left,
+               media->margins[i].right,
+               media->margins[i].top,
+               media->margins[i].bottom);
+    }
+    printf("\n");
+}
+
+static void printOption(const cpdb_option_t *opt)
+{
+    int i;
+    
+    printf("[+] %s\n", opt->option_name);
+    printf(" --> GROUP: %s\n", opt->group_name);
+    for (i = 0; i < opt->num_supported; i++)
+    {
+        printf("   * %s\n", opt->supported_values[i]);
+    }
+    printf(" --> DEFAULT: %s\n\n", opt->default_value);
+}
+
+static void displayAllPrinters(cpdb_frontend_obj_t *f)
+{
+    GHashTableIter iter;
+    gpointer key, value;
+
+    g_hash_table_iter_init(&iter, f->printer);
+    while (g_hash_table_iter_next(&iter, &key, &value))
+    {
+        const cpdb_printer_obj_t *p = value;
+        printBasicOptions(p);
+    }
+}
+
+static void printer_callback(cpdb_frontend_obj_t *f, cpdb_printer_obj_t *p, cpdb_printer_update_t change)
+{
+    switch(change)
+    {
+    case CPDB_CHANGE_PRINTER_ADDED:
+        g_message("Added printer %s : %s!\n", p->name, p->backend_name);
+        printBasicOptions(p);
+        break;
+
+    case CPDB_CHANGE_PRINTER_REMOVED:
+        g_message("Removed printer %s : %s!\n", p->name, p->backend_name);
+        cpdbDeletePrinterObj(p);
+        break;
+    
+    case CPDB_CHANGE_PRINTER_STATE_CHANGED:
+        g_message("Printer state changed for %s : %s to \"%s\"", p->name, p->backend_name, p->state);
+        break;
+    }
 }
 
 static void acquire_details_callback(cpdb_printer_obj_t *p, int success, void *user_data)
@@ -35,8 +101,7 @@ static void acquire_details_callback(cpdb_printer_obj_t *p, int success, void *u
 
 int main(int argc, char **argv)
 {
-    cpdb_printer_callback add_cb = (cpdb_printer_callback)add_printer_callback;
-    cpdb_printer_callback rem_cb = (cpdb_printer_callback)remove_printer_callback;
+    cpdb_printer_callback printer_cb = (cpdb_printer_callback)printer_callback;
 
     setlocale (LC_ALL, "");
     cpdbInit();
@@ -45,14 +110,15 @@ int main(int argc, char **argv)
 
     char *dialog_bus_name = malloc(300);
     if (argc > 1) //this is for creating multiple instances of a dialog simultaneously
-        f = cpdbGetNewFrontendObj(argv[1], add_cb, rem_cb);
+        f = cpdbGetNewFrontendObj(argv[1], printer_cb);
     else
-        f = cpdbGetNewFrontendObj(NULL, add_cb, rem_cb);
+        f = cpdbGetNewFrontendObj(NULL, printer_cb);
 
     /** Uncomment the line below if you don't want to use the previously saved settings**/
     cpdbIgnoreLastSavedSettings(f);
     g_thread_new("parse_commands_thread", parse_commands, NULL);
     cpdbConnectToDBus(f);
+    displayAllPrinters(f);
     GMainLoop *loop = g_main_loop_new(NULL, FALSE);
     g_main_loop_run(loop);
 }
@@ -76,11 +142,6 @@ gpointer parse_commands(gpointer user_data)
         {
             cpdbDisconnectFromDBus(f);
             cpdbConnectToDBus(f);
-        }
-        else if (strcmp(buf, "refresh") == 0)
-        {
-            cpdbRefreshPrinterList(f);
-            g_message("Getting changes in printer list..\n");
         }
         else if (strcmp(buf, "hide-remote") == 0)
         {
@@ -122,7 +183,7 @@ gpointer parse_commands(gpointer user_data)
             g_hash_table_iter_init(&iter, opts->table);
             while (g_hash_table_iter_next(&iter, NULL, &value))
             {
-                cpdbPrintOption(value);
+                printOption(value);
             }
         }
         else if (strcmp(buf, "get-all-media") == 0)
@@ -145,7 +206,7 @@ gpointer parse_commands(gpointer user_data)
             g_hash_table_iter_init(&iter, opts->media);
             while (g_hash_table_iter_next(&iter, NULL, &value))
             {
-                cpdbPrintMedia(value);
+                printMedia(value);
             }
         }
         else if (strcmp(buf, "get-default") == 0)
@@ -406,7 +467,6 @@ void display_help()
 {
     g_message("Available commands .. ");
     printf("%s\n", "stop");
-    printf("%s\n", "refresh");
     printf("%s\n", "hide-remote");
     printf("%s\n", "unhide-remote");
     printf("%s\n", "hide-temporary");
@@ -435,5 +495,5 @@ void display_help()
     printf("%s\n", "get-option-translation <option> <printer id> <backend name>");
     printf("%s\n", "get-choice-translation <option> <choice> <printer id> <backend name>");
     printf("%s\n", "get-group-translation <group> <printer id> <backend name>");
-    printf("pickle-printer <printer id> <backend name>\n");
+    printf("%s\n", "pickle-printer <printer id> <backend name>\n");
 }

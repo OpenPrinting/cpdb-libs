@@ -14,6 +14,12 @@
             <arg name="printer_id" type="s" direction="out"/>
             <arg name="backend_name" type="s" direction="out"/>
         </signal>
+        <signal name="PrinterStateChanged">
+            <arg name="printer_id" type="s" direction="out"/>
+            <arg name="printer_state" type="s" direction="out"/>
+            <arg name="printer_is_accepting_jobs" type="b" direction="out"/>
+            <arg name="backend_name" type="s" direction="out"/>
+        </signal>
         <method name="GetBackendName">
             <arg name="backend_name" direction="out" type="s" />
         </method>

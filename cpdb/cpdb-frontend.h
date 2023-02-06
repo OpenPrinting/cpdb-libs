@@ -39,21 +39,20 @@ typedef struct cpdb_margin_s cpdb_margin_t;
 typedef struct cpdb_media_s cpdb_media_t;
 typedef struct cpdb_job_s cpdb_job_t;
 
-
-/**
- * Callback for frontend updates
- * 
- * @param frontend_obj  Frontend instance to be updated
- */
-typedef void (*cpdb_event_callback)(cpdb_frontend_obj_t* frontend_obj);
+typedef enum cpdb_printer_update_e {
+    CPDB_CHANGE_PRINTER_ADDED,
+    CPDB_CHANGE_PRINTER_REMOVED,
+    CPDB_CHANGE_PRINTER_STATE_CHANGED,
+} cpdb_printer_update_t;
 
 /**
  * Callback for printer updates
  * 
  * @param frontend_obj      Frontend instance
  * @param printer_obj       Printer object updated
+ * @param update            Type of update
  */
-typedef void (*cpdb_printer_callback)(cpdb_frontend_obj_t *frontend_obj, cpdb_printer_obj_t *printer_obj);
+typedef void (*cpdb_printer_callback)(cpdb_frontend_obj_t *frontend_obj, cpdb_printer_obj_t *printer_obj, cpdb_printer_update_t update);
 
 /**
  * Callback for async functions
@@ -77,9 +76,9 @@ struct cpdb_frontend_obj_s
     GDBusConnection *connection;
 
     int own_id;
+    gboolean name_done;
     char *bus_name;
-    cpdb_printer_callback add_cb;
-    cpdb_printer_callback rem_cb;
+    cpdb_printer_callback printer_cb;
 
     int num_backends;
     GHashTable *backend; /**[backend name(like "CUPS" or "GCP")] ---> [BackendObj]**/
@@ -94,12 +93,12 @@ struct cpdb_frontend_obj_s
  * Get a new cpdb_frontend_obj_t instance.
  * 
  * @param instance_name     Unique name for the frontend object, can be NULL
- * @param add_cb            Callback function for when a new printer is added
- * @param rem_cb            Callback function for when an old printer is removed
+ * @param printer_cb        Callback function for any printer updates
+ * @param change            Type of update
  * 
  * @return                  Frontend instance
  */
-cpdb_frontend_obj_t *cpdbGetNewFrontendObj(const char *instance_name, cpdb_printer_callback add_cb, cpdb_printer_callback remove_cb);
+cpdb_frontend_obj_t *cpdbGetNewFrontendObj(const char *instance_name, cpdb_printer_callback printer_cb);
 
 /**
  * Free up a frontend instance.
@@ -160,13 +159,6 @@ gboolean cpdbAddPrinter(cpdb_frontend_obj_t *frontend_obj, cpdb_printer_obj_t *p
  * The caller is responsible for deallocating the printer object.
  */
 cpdb_printer_obj_t *cpdbRemovePrinter(cpdb_frontend_obj_t *f, const char *printer_id, const char *backend_name);
-
-/**
- * Signal CPDB backends to refresh their printer list.
- * 
- * @param frontend_obj      Frontend instance
- */
-void cpdbRefreshPrinterList(cpdb_frontend_obj_t *frontend_obj);
 
 /**
  * Hide the remote printers of the backend.
@@ -305,13 +297,6 @@ cpdb_printer_obj_t *cpdbGetNewPrinterObj();
  * @param printer_obj       Printer object
  */
 void cpdbDeletePrinterObj(cpdb_printer_obj_t *printer_obj);
-
-/**
- * Print basic printer info to stdout.
- * 
- * @param printer_obj       Printer object
- */
-void cpdbPrintBasicOptions(cpdb_printer_obj_t *printer_obj);
 
 /**
  * Print basic printer info to debug logs.
@@ -680,13 +665,6 @@ struct cpdb_option_s
 };
 
 /**
- * Print info about a printer option to stdout.
- * 
- * @param opt               Option object
- */
-void cpdbPrintOption(const cpdb_option_t *opt);
-
-/**
  * @param opt               Option object
  */
 void cpdbDeleteOption(cpdb_option_t *);
@@ -720,13 +698,6 @@ struct cpdb_media_s
     int num_margins;
     cpdb_margin_t *margins;
 };
-
-/**
- * Print info about media-size to stdout.
- * 
- * @param media             Media-size object
- */
-void cpdbPrintMedia(cpdb_media_t *media);
 
 /**
  * Free up a media-size object.

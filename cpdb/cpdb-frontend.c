@@ -14,6 +14,13 @@ static void                 on_printer_removed              (GDBusConnection *  
                                                              const gchar *              signal_name,
                                                              GVariant *                 parameters,
                                                              gpointer                   user_data);
+static void                 on_printer_state_changed        (GDBusConnection *          connection,
+                                                             const gchar *              sender_name,
+                                                             const gchar *              object_path,
+                                                             const gchar *              interface_name,
+                                                             const gchar *              signal_name,
+                                                             GVariant *                 parameters,
+                                                             gpointer                   user_data);
 
 static void                 on_name_acquired                (GDBusConnection *          connection,
                                                              const gchar *              name,
@@ -51,19 +58,19 @@ ________________________________________________ cpdb_frontend_obj_t ___________
 **/
 
 cpdb_frontend_obj_t *cpdbGetNewFrontendObj(const char *instance_name,
-                                           cpdb_printer_callback add_cb,
-                                           cpdb_printer_callback rem_cb)
+                                           cpdb_printer_callback printer_cb)
 {
     cpdb_frontend_obj_t *f = g_new0(cpdb_frontend_obj_t, 1);
     
     f->skeleton = print_frontend_skeleton_new();
     f->connection = NULL;
+    f->own_id = 0;
+    f->name_done = FALSE;
     if (instance_name == NULL)
         f->bus_name = cpdbGetStringCopy(CPDB_DIALOG_BUS_NAME);
     else
         f->bus_name = cpdbConcat(CPDB_DIALOG_BUS_NAME, instance_name);
-    f->add_cb = add_cb;
-    f->rem_cb = rem_cb;
+    f->printer_cb = printer_cb;
     f->num_backends = 0;
     f->backend = g_hash_table_new_full(g_str_hash,
                                        g_str_equal,
@@ -73,7 +80,7 @@ cpdb_frontend_obj_t *cpdbGetNewFrontendObj(const char *instance_name,
     f->printer = g_hash_table_new_full(g_str_hash,
                                        g_str_equal,
                                        free,
-                                       (GDestroyNotify) cpdbDeletePrinterObj);
+                                       NULL);
     f->last_saved_settings = cpdbReadSettingsFromDisk();
     return f;
 }
@@ -119,7 +126,7 @@ static void on_printer_added(GDBusConnection *connection,
     }
     cpdbFillBasicOptions(p, parameters);
     cpdbAddPrinter(f, p);
-    f->add_cb(f, p);
+    f->printer_cb(f, p, CPDB_CHANGE_PRINTER_ADDED);
 }
 
 static void on_printer_removed(GDBusConnection *connection,
@@ -136,7 +143,29 @@ static void on_printer_removed(GDBusConnection *connection,
     
     g_variant_get(parameters, "(ss)", &printer_id, &backend_name);
     cpdb_printer_obj_t *p = cpdbRemovePrinter(f, printer_id, backend_name);
-    f->rem_cb(f, p);
+    f->printer_cb(f, p, CPDB_CHANGE_PRINTER_REMOVED);
+}
+
+static void on_printer_state_changed(GDBusConnection *connection,
+                                     const gchar *sender_name,
+                                     const gchar *object_path,
+                                     const gchar *interface_name,
+                                     const gchar *signal_name,
+                                     GVariant *parameters,
+                                     gpointer user_data)
+{
+    cpdb_frontend_obj_t *f = (cpdb_frontend_obj_t *) user_data;
+    gboolean printer_is_accepting_jobs;
+    char *printer_id, *printer_state, *backend_name;
+
+    g_variant_get(parameters, "(ssbs)", &printer_id, &printer_state,
+                    &printer_is_accepting_jobs, &backend_name);
+    cpdb_printer_obj_t *p = cpdbFindPrinterObj(f, printer_id, backend_name);
+    if (p->state)
+        free(p->state);
+    p->state = cpdbGetStringCopy(printer_state);
+    p->accepting_jobs = printer_is_accepting_jobs;
+    f->printer_cb(f, p, CPDB_CHANGE_PRINTER_STATE_CHANGED);
 }
 
 static void on_name_acquired(GDBusConnection *connection,
@@ -169,6 +198,16 @@ static void on_name_acquired(GDBusConnection *connection,
                                        on_printer_removed,              //callback
                                        user_data,                       //user_data
                                        NULL);
+    g_dbus_connection_signal_subscribe(connection,
+                                       NULL,                                //Sender name
+                                       "org.openprinting.PrintBackend",     //Sender interface
+                                       CPDB_SIGNAL_PRINTER_STATE_CHANGED,   //Signal name
+                                       NULL,                                /**match on all object paths**/
+                                       NULL,                                /**match on all arguments**/
+                                       0,                                   //Flags
+                                       on_printer_state_changed,            //callback
+                                       user_data,                           //user_data
+                                       NULL);
 
     g_dbus_interface_skeleton_export(G_DBUS_INTERFACE_SKELETON(f->skeleton),
                                      connection, 
@@ -181,6 +220,7 @@ static void on_name_acquired(GDBusConnection *connection,
     }
     
     cpdbActivateBackends(f);
+    f->name_done = TRUE;
 }
 
 static void on_name_lost(GDBusConnection *connection,
@@ -188,6 +228,8 @@ static void on_name_lost(GDBusConnection *connection,
                          gpointer user_data)
 {
     logdebug("Lost bus name %s\n", name);
+    cpdb_frontend_obj_t *f = user_data;
+    f->name_done = TRUE;
 }
 
 static GDBusConnection *get_dbus_connection()
@@ -217,6 +259,8 @@ static GDBusConnection *get_dbus_connection()
 
 void cpdbConnectToDBus(cpdb_frontend_obj_t *f)
 {
+    GMainContext *context;
+
     if ((f->connection = get_dbus_connection()) == NULL)
     {
         loginfo("Couldn't connect to DBus\n");
@@ -230,7 +274,13 @@ void cpdbConnectToDBus(cpdb_frontend_obj_t *f)
                                              on_name_lost,
                                              f,
                                              NULL);
-    
+
+    // Wait till either of name acquired/lost callbacks finish
+    context = g_main_context_get_thread_default();
+    while (!f->name_done)
+    {
+        g_main_context_iteration(context, TRUE);
+    }
 }
 
 void cpdbDisconnectFromDBus(cpdb_frontend_obj_t *f)
@@ -408,12 +458,6 @@ cpdb_printer_obj_t *cpdbRemovePrinter(cpdb_frontend_obj_t *f,
     
     free(key);
     return p;
-}
-
-void cpdbRefreshPrinterList(cpdb_frontend_obj_t *f)
-{
-    loginfo("Refreshing printer list\n");
-    print_frontend_emit_refresh_backend(f->skeleton);
 }
 
 void cpdbHideRemotePrinters(cpdb_frontend_obj_t *f)
@@ -817,20 +861,6 @@ void cpdbDebugPrinter(const cpdb_printer_obj_t *p)
     logdebug("state: %s\n", p->state);
     logdebug("backend: %s\n", p->backend_name);
     logdebug("-------------------------\n\n");
-}
-
-void cpdbPrintBasicOptions(cpdb_printer_obj_t *p)
-{
-    printf("-------------------------\n");
-    printf("Printer %s\n", p->id);
-    printf("name: %s\n", p->name);
-    printf("location: %s\n", p->location);
-    printf("info: %s\n", p->info);
-    printf("make and model: %s\n", p->make_and_model);
-    printf("accepting jobs? %s\n", (p->accepting_jobs ? "yes" : "no"));
-    printf("state: %s\n", p->state);
-    printf("backend: %s\n", p->backend_name);
-    printf("-------------------------\n\n");
 }
 
 gboolean cpdbIsAcceptingJobs(cpdb_printer_obj_t *p)
@@ -1277,7 +1307,7 @@ cpdb_printer_obj_t *cpdbResurrectPrinterFromFile(const char *filename)
     if (fscanf(fp, "%d\n", &p->accepting_jobs) == 0)
         goto parse_error;
     
-    cpdbPrintBasicOptions(p);
+    cpdbDebugPrinter(p);
 
     if (fscanf(fp, "%d\n", &count) == 0)
         goto parse_error;
@@ -1728,18 +1758,6 @@ void cpdbDeleteOptions(cpdb_options_t *opts)
 }
 
 /**************cpdb_option_t************************************/
-void cpdbPrintOption(const cpdb_option_t *opt)
-{
-    int i;
-    
-    printf("[+] %s\n", opt->option_name);
-    printf(" --> GROUP: %s\n", opt->group_name);
-    for (i = 0; i < opt->num_supported; i++)
-    {
-        printf("   * %s\n", opt->supported_values[i]);
-    }
-    printf(" --> DEFAULT: %s\n\n", opt->default_value);
-}
 
 void cpdbDeleteOption(cpdb_option_t *opt)
 {
@@ -1759,23 +1777,6 @@ void cpdbDeleteOption(cpdb_option_t *opt)
 }
 
 /**************cpdb_option_t************************************/
-void cpdbPrintMedia(cpdb_media_t *media)
-{
-    printf("[+] Media: %s\n", media->name);
-    printf("   * width = %d\n", media->width);
-    printf("   * length = %d\n", media->length);
-    printf(" --> Supported margins: %d\n", media->num_margins);
-    printf("     left, right, top, bottom\n");
-    for (int i = 0; i < media->num_margins; i++)
-    {
-        printf("     * %d, %d, %d, %d,\n",
-               media->margins[i].left,
-               media->margins[i].right,
-               media->margins[i].top,
-               media->margins[i].bottom);
-    }
-    printf("\n");
-}
 
 void cpdbDeleteMedia(cpdb_media_t *media)
 {

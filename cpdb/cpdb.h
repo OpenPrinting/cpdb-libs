@@ -232,14 +232,15 @@ GVariant *cpdbPackMediaArray(int num_val, int (*margins)[4]);
 #define CPDB_STATE_PRINTING             N_("printing")
 #define CPDB_STATE_STOPPED              N_("stopped")
 
-#define CPDB_SIGNAL_STOP_BACKEND N_("StopListing")
-#define CPDB_SIGNAL_REFRESH_BACKEND N_("RefreshBackend")
-#define CPDB_SIGNAL_PRINTER_ADDED N_("PrinterAdded")
-#define CPDB_SIGNAL_PRINTER_REMOVED N_("PrinterRemoved")
-#define CPDB_SIGNAL_HIDE_REMOTE N_("HideRemotePrinters")
-#define CPDB_SIGNAL_UNHIDE_REMOTE N_("UnhideRemotePrinters")
-#define CPDB_SIGNAL_HIDE_TEMP N_("HideTemporaryPrinters")
-#define CPDB_SIGNAL_UNHIDE_TEMP N_("UnhideTemporaryPrinters")
+#define CPDB_SIGNAL_STOP_BACKEND "StopListing"
+#define CPDB_SIGNAL_REFRESH_BACKEND "RefreshBackend"
+#define CPDB_SIGNAL_PRINTER_ADDED "PrinterAdded"
+#define CPDB_SIGNAL_PRINTER_STATE_CHANGED "PrinterStateChanged"
+#define CPDB_SIGNAL_PRINTER_REMOVED "PrinterRemoved"
+#define CPDB_SIGNAL_HIDE_REMOTE "HideRemotePrinters"
+#define CPDB_SIGNAL_UNHIDE_REMOTE "UnhideRemotePrinters"
+#define CPDB_SIGNAL_HIDE_TEMP "HideTemporaryPrinters"
+#define CPDB_SIGNAL_UNHIDE_TEMP "UnhideTemporaryPrinters"
 
 #define CPDB_JOB_STATE_ABORTED N_("Aborted")
 #define CPDB_JOB_STATE_CANCELLED N_("Cancelled")

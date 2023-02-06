@@ -1,6 +1,5 @@
 <node>
     <interface name="org.openprinting.PrintFrontend">
-        <signal name="RefreshBackend" />
         <signal name="StopListing"/>
         <signal name="HideRemotePrinters"/>
         <signal name="UnhideRemotePrinters"/>

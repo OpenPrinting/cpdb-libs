@@ -58,6 +58,24 @@ static void printOption(const cpdb_option_t *opt)
     printf(" --> DEFAULT: %s\n\n", opt->default_value);
 }
 
+static void printTranslations(cpdb_printer_obj_t *p)
+{
+    GHashTableIter iter;
+    gpointer key, value;
+
+    if (p->locale == NULL || p->translations == NULL)
+    {
+        printf("No translations found\n");
+        return;
+    }
+
+    g_hash_table_iter_init(&iter, p->translations);
+    while (g_hash_table_iter_next(&iter, &key, &value))
+    {
+        printf("'%s' : '%s'\n", (char *)key, (char *)value);
+    }
+}
+
 static void displayAllPrinters(cpdb_frontend_obj_t *f)
 {
     GHashTableIter iter;
@@ -97,6 +115,14 @@ static void acquire_details_callback(cpdb_printer_obj_t *p, int success, void *u
         g_message("Details acquired for %s : %s\n", p->name, p->backend_name);
     else
         g_message("Could not acquire printer details for %s : %s\n", p->name, p->backend_name);
+}
+
+static void acquire_translations_callback(cpdb_printer_obj_t *p, int success, void *user_data)
+{
+    if (!success)
+        g_message("Could not acquire printer translations for %s : %s\n", p->name, p->backend_name);
+    g_message("Translations acquired for %s : %s\n", p->name, p->backend_name);
+    printTranslations(p);
 }
 
 int main(int argc, char **argv)
@@ -422,6 +448,15 @@ gpointer parse_commands(gpointer user_data)
             cpdb_printer_obj_t *p = cpdbFindPrinterObj(f, printer_id, backend_name);
             printf("%s\n", cpdbGetGroupTranslation(p, group_name, locale));
         }
+        else if (strcmp(buf, "get-all-translations") == 0)
+        {
+            char printer_id[100];
+            char backend_name[100];
+            scanf("%s%s", printer_id, backend_name);
+            cpdb_printer_obj_t *p = cpdbFindPrinterObj(f, printer_id, backend_name);
+            cpdbGetAllTranslations(p, locale);
+            printTranslations(p);
+        }
         else if (strcmp(buf, "get-media-size") == 0)
         {
             char printer_id[100];
@@ -460,6 +495,19 @@ gpointer parse_commands(gpointer user_data)
             g_message("Acquiring printer details asynchronously...\n");
             cpdbAcquireDetails(p, acquire_details_callback, NULL);
 		}
+        else if (strcmp(buf, "acquire-translations") == 0)
+        {
+            char printer_id[100];
+            char backend_name[100];
+            scanf("%s%s", printer_id, backend_name);
+            
+            cpdb_printer_obj_t *p = cpdbFindPrinterObj(f, printer_id, backend_name);
+            if(p == NULL)
+              continue;
+
+            g_message("Acquiring printer translations asynchronously...\n");
+            cpdbAcquireTranslations(p, locale, acquire_translations_callback, NULL);
+        }
     }
 }
 
@@ -482,8 +530,8 @@ void display_help()
     printf("%s\n", "get-state <printer id> <backend name>");
     printf("%s\n", "is-accepting-jobs <printer id> <backend name(like \"CUPS\")>");
     printf("%s\n", "cancel-job <job-id> <printer id> <backend name>");
-
     printf("%s\n", "acquire-details <printer id> <backend name>");
+    printf("%s\n", "acquire-translations <printer id> <backend name>");
     printf("%s\n", "get-all-options <printer-name> <backend-name>");
     printf("%s\n", "get-default <option name> <printer id> <backend name>");
     printf("%s\n", "get-setting <option name> <printer id> <backend name>");
@@ -495,5 +543,6 @@ void display_help()
     printf("%s\n", "get-option-translation <option> <printer id> <backend name>");
     printf("%s\n", "get-choice-translation <option> <choice> <printer id> <backend name>");
     printf("%s\n", "get-group-translation <group> <printer id> <backend name>");
+    printf("%s\n", "get-all-translations <printer id> <backend name>");
     printf("%s\n", "pickle-printer <printer id> <backend name>\n");
 }

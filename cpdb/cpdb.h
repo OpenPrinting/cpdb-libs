@@ -34,6 +34,12 @@ extern "C" {
 #define CPDB_PRINTER_ARRAY_ARGS "a(sssssbss)"
 #define CPDB_PRINTER_ARGS "(sssssbss)"
 
+/* For translations */
+#define CPDB_GRP_PREFIX "GRP"
+#define CPDB_OPT_PREFIX "OPT"
+#define CPDB_TL_DICT_ARGS "a{ss}"
+#define CPDB_TL_ARGS "{ss}"
+
 #define CPDB_PRINTER_ADDED_ARGS "(sssssbss)"
 #define CPDB_JOB_ARGS "(ssssssi)"
 #define CPDB_JOB_ARRAY_ARGS "a(ssssssi)"

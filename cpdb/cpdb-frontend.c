@@ -42,6 +42,8 @@ static int                  cpdbSetDefaultPrinter           (const char *       
 static void                 cpdbFillBasicOptions            (cpdb_printer_obj_t *       printer_obj,
                                                              GVariant *                 variant);
 
+static void                 cpdbDeleteTranslations          (cpdb_printer_obj_t *       printer_obj);
+
 static void                 cpdbUnpackOptions               (int                        num_options,
                                                              GVariant *                 var,
                                                              int                        num_media,
@@ -51,6 +53,7 @@ static void                 cpdbUnpackJobArray              (GVariant *         
                                                              int                        num_jobs,
                                                              cpdb_job_t *               jobs,
                                                              char *                     backend_name);
+static GHashTable *         cpdbUnpackTranslations          (GVariant *                 translations);
 
 /**
 ________________________________________________ cpdb_frontend_obj_t __________________________________________
@@ -817,6 +820,16 @@ cpdb_printer_obj_t *cpdbGetNewPrinterObj()
     return p;
 }
 
+static void cpdbDeleteTranslations(cpdb_printer_obj_t *p)
+{
+    g_free(p->locale);
+    if (p->translations)
+        g_hash_table_destroy(p->translations);
+
+    p->locale = NULL;
+    p->translations = NULL;
+}
+
 void cpdbDeletePrinterObj(cpdb_printer_obj_t *p)
 {
     if (p == NULL)
@@ -831,6 +844,7 @@ void cpdbDeletePrinterObj(cpdb_printer_obj_t *p)
         cpdbDeleteOptions(p->options);
     if (p->settings)
         cpdbDeleteSettings(p->settings);
+    cpdbDeleteTranslations(p);
     
     free(p);
 }
@@ -1329,7 +1343,7 @@ cpdb_printer_obj_t *cpdbResurrectPrinterFromFile(const char *filename)
     return p;
 
 parse_error:
-    logerror("Error resurrecting printer : Coudln't partse %s\n", path);
+    logerror("Error resurrecting printer : Coudln't parse %s\n", path);
     
 failed:
     if (fp)
@@ -1346,9 +1360,28 @@ char *cpdbGetOptionTranslation(cpdb_printer_obj_t *p,
                                const char *option_name,
                                const char *locale)
 {
-    char *translation;
+    char *name_key, *translation;
     GError *error = NULL;
-    
+
+    if (p == NULL || option_name == NULL || locale == NULL)
+    {
+        logwarn("Invalid paramaters: cpdbGetOptionTranslation()\n");
+        return NULL;
+    }
+
+    if (p->locale != NULL && strcmp(p->locale, locale) == 0)
+    {
+        name_key = cpdbConcatSep(CPDB_OPT_PREFIX, option_name);
+        translation = g_hash_table_lookup(p->translations, name_key);
+        free(name_key);
+        if (translation)
+        {
+            logdebug("Found translation=%s; for option=%s;locale=%s;printer=%s#%s;\n",
+                        translation, option_name, locale, p->id, p->backend_name);
+            return cpdbGetStringCopy(translation);
+        }
+    }
+
     print_backend_call_get_option_translation_sync(p->backend_proxy,
                                                    p->id,
                                                    option_name,
@@ -1374,8 +1407,30 @@ char *cpdbGetChoiceTranslation(cpdb_printer_obj_t *p,
                                const char *choice_name,
                                const char *locale)
 {
-    char *translation;
+    char *name_key, *choice_key, *translation;
     GError *error = NULL;
+
+    if (p == NULL || option_name == NULL || choice_name == NULL || locale == NULL)
+    {
+        logwarn("Invalid paramaters: cpdbGetChoiceTranslation()\n");
+        return NULL;
+    }
+
+    if (p->locale != NULL && strcmp(p->locale, locale) == 0)
+    {
+        name_key = cpdbConcatSep(CPDB_OPT_PREFIX, option_name);
+        choice_key = cpdbConcatSep(name_key, choice_name);
+        translation = g_hash_table_lookup(p->translations, choice_key);
+        free(name_key);
+        free(choice_key);
+        if (translation)
+        {
+            logdebug("Found translation=%s; for option=%s;choice=%s;locale=%s;printer=%s#%s;\n",
+                        translation, option_name, choice_name, locale, 
+                        p->id, p->backend_name);
+            return cpdbGetStringCopy(translation);
+        }
+    }
     
     print_backend_call_get_choice_translation_sync(p->backend_proxy,
                                                    p->id,
@@ -1404,8 +1459,27 @@ char *cpdbGetGroupTranslation(cpdb_printer_obj_t *p,
                               const char *group_name,
                               const char *locale)
 {
-    char *translation;
+    char *group_key, *translation;
     GError *error = NULL;
+
+    if (p == NULL || group_name == NULL || locale == NULL)
+    {
+        logwarn("Invalid paramaters: cpdbGetGroupTranslation()\n");
+        return NULL;
+    }
+
+    if (p->locale != NULL && strcmp(p->locale, locale) == 0)
+    {
+        group_key = cpdbConcatSep(CPDB_GRP_PREFIX, group_name);
+        translation = g_hash_table_lookup(p->translations, group_key);
+        free(group_key);
+        if (translation)
+        {
+            logdebug("Found translation=%s; for group=%s;locale=%s;printer=%s#%s;\n",
+                        translation, group_name, locale, p->id, p->backend_name);
+            return cpdbGetStringCopy(translation);
+        }
+    }
     
     print_backend_call_get_group_translation_sync(p->backend_proxy,
                                                   p->id,
@@ -1426,6 +1500,40 @@ char *cpdbGetGroupTranslation(cpdb_printer_obj_t *p,
     logdebug("Obtained translation=%s; for group=%s;locale=%s;printer=%s#%s;\n",
                 translation, group_name, locale, p->id, p->backend_name);
     return cpdbGetStringCopy(translation);
+}
+
+void cpdbGetAllTranslations(cpdb_printer_obj_t *p,
+                            const char *locale)
+{
+    GVariant *translations;
+    GError *error = NULL;
+
+    if (p == NULL || locale == NULL)
+    {
+        logwarn("Invalid parameters: cpdbGetAllTranslations()\n");
+        return;
+    }
+
+    if (p->locale != NULL && strcmp(p->locale, locale) == 0)
+        return;
+
+    print_backend_call_get_all_translations_sync(p->backend_proxy,
+                                                 p->id,
+                                                 locale,
+                                                 &translations,
+                                                 NULL,
+                                                 &error);
+    if (error)
+    {
+        logerror("Error getting printer translations in %s for %s %s : %s\n",
+                    locale, p->id, p->backend_name, error->message);
+        return;
+    }
+    logdebug("Fetched translations for printer %s %s\n", p->id, p->backend_name);
+
+    cpdbDeleteTranslations(p);
+    p->locale = cpdbGetStringCopy(locale);
+    p->translations = cpdbUnpackTranslations(translations);
 }
 
 cpdb_media_t *cpdbGetMedia(cpdb_printer_obj_t *p,
@@ -1467,11 +1575,17 @@ int cpdbGetMediaMargins(cpdb_printer_obj_t *p,
     return num_margins;	
 }
 
+typedef struct {
+    cpdb_printer_obj_t *p;
+    cpdb_async_callback caller_cb;
+    void *user_data;
+} cpdb_async_details_obj_t;
+
 void acquire_details_cb(PrintBackend *proxy,
                         GAsyncResult *res,
                         gpointer user_data)
 {
-    cpdb_async_obj_t *a = user_data;
+    cpdb_async_details_obj_t *a = user_data;
     
     cpdb_printer_obj_t *p = a->p;
     cpdb_async_callback caller_cb = a->caller_cb;
@@ -1492,14 +1606,16 @@ void acquire_details_cb(PrintBackend *proxy,
     {
         logerror("Error acquiring printer details for %s %s : %s\n",
                     p->id, p->backend_name, error->message);
-        caller_cb(p, FALSE, a->user_data);
+        if (caller_cb)
+            caller_cb(p, FALSE, a->user_data);
     }
     else
     {
         loginfo("Acquired %d options and %d media for %s %s\n",
                 num_options, num_media, p->id, p->backend_name);
         cpdbUnpackOptions(num_options, var, num_media, media_var, p->options);
-        caller_cb(p, TRUE, a->user_data);
+        if (caller_cb)
+            caller_cb(p, TRUE, a->user_data);
     }
     
     free(a);
@@ -1509,13 +1625,20 @@ void cpdbAcquireDetails(cpdb_printer_obj_t *p,
                         cpdb_async_callback caller_cb,
                         void *user_data)
 {
+    if (p == NULL)
+    {
+        logwarn("Invalid parameters: cpdbAcquireDetails()\n");
+        return;
+    }
+
     if (p->options)
     {
-        caller_cb(p, TRUE, user_data);
+        if (caller_cb)
+            caller_cb(p, TRUE, user_data);
         return;
     }
     
-    cpdb_async_obj_t *a = g_new0(cpdb_async_obj_t, 1);
+    cpdb_async_details_obj_t *a = g_new0(cpdb_async_details_obj_t, 1);
     a->p = p;
     a->caller_cb = caller_cb;
     a->user_data = user_data;
@@ -1526,6 +1649,78 @@ void cpdbAcquireDetails(cpdb_printer_obj_t *p,
                                        NULL,
                                        (GAsyncReadyCallback) acquire_details_cb,
                                        a);
+}
+
+
+typedef struct {
+    cpdb_printer_obj_t *p;
+    char *locale;
+    cpdb_async_callback caller_cb;
+    void *user_data;
+} cpdb_async_translations_obj_t;
+
+
+static void acquire_translations_cb(PrintBackend *proxy,
+                                    GAsyncResult *res,
+                                    gpointer user_data)
+{
+    GError *error = NULL;
+    GVariant *translations;
+
+    cpdb_async_translations_obj_t *a = user_data;
+    cpdb_printer_obj_t *p = a->p;
+
+    print_backend_call_get_all_translations_finish(proxy, &translations,
+                                                    res, &error);
+    if (error)
+    {
+        logerror("Error getting printer translations for %s %s : %s\n",
+                    p->id, p->backend_name, error->message);
+        a->caller_cb(p, FALSE, a->user_data);
+    }
+    else
+    {
+        cpdbDeleteTranslations(p);
+        p->locale = cpdbGetStringCopy(a->locale);
+        p->translations = cpdbUnpackTranslations(translations);
+        a->caller_cb(p, TRUE, a->user_data);
+    }
+
+    free(a->locale);
+    free(a);
+}
+
+void cpdbAcquireTranslations(cpdb_printer_obj_t *p,
+                             const char *locale,
+                             cpdb_async_callback caller_cb,
+                             void *user_data)
+{
+    if (p == NULL || locale == NULL)
+    {
+        logwarn("Invalid parameters: cpdbAcquireTranslations()\n");
+        return;
+    }
+
+    if (p->locale != NULL && strcmp(locale, p->locale) == 0)
+    {
+        caller_cb(p, TRUE, user_data);
+        return;
+    }
+
+    cpdb_async_translations_obj_t *a = g_new0(cpdb_async_translations_obj_t, 1);
+    a->p = p;
+    a->locale = cpdbGetStringCopy(locale);
+    a->caller_cb = caller_cb;
+    a->user_data = user_data;
+
+    logdebug("Acquiring printer translations for %s %s\n",
+                p->id, p->backend_name);
+    print_backend_call_get_all_translations(p->backend_proxy,
+                                            p->id,
+                                            locale,
+                                            NULL,
+                                            (GAsyncReadyCallback) acquire_translations_cb,
+                                            a);
 }
 
 /**
@@ -1908,4 +2103,24 @@ void cpdbUnpackOptions(int num_options,
 	}
     
 }
+
+static GHashTable *cpdbUnpackTranslations (GVariant *variant)
+{
+    GVariantIter iter;
+    gchar *key, *value;
+    GHashTable *translations;
+
+    translations = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+    g_variant_iter_init(&iter, variant);
+    while (g_variant_iter_loop(&iter, CPDB_TL_ARGS, &key, &value))
+    {
+        logdebug("Fetched translation '%s' : '%s'\n", key, value);
+        g_hash_table_insert(translations,
+                            cpdbGetStringCopy(key), cpdbGetStringCopy(value));
+    }
+
+    return translations;
+}
+
+
 /************************************************************************************************/

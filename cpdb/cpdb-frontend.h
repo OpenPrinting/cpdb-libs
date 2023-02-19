@@ -31,7 +31,6 @@ extern "C"
 
 typedef struct cpdb_frontend_obj_s cpdb_frontend_obj_t;
 typedef struct cpdb_printer_obj_s cpdb_printer_obj_t;
-typedef struct cpdb_async_obj_s cpdb_async_obj_t;
 typedef struct cpdb_settings_s cpdb_settings_t;
 typedef struct cpdb_options_s cpdb_options_t;
 typedef struct cpdb_option_s cpdb_option_t;
@@ -282,6 +281,10 @@ struct cpdb_printer_obj_s
 
     /**The settings the user selects, and which will be used for printing the job**/
     cpdb_settings_t *settings;
+
+    /** Translations **/
+    char *locale;
+    GHashTable *translations;
 };
 
 /**
@@ -491,6 +494,15 @@ char *cpdbGetChoiceTranslation(cpdb_printer_obj_t *printer_obj, const char *opti
  */
 char *cpdbGetGroupTranslation(cpdb_printer_obj_t *printer_obj, const char *group_name, const char *lang);
 
+
+/**
+ * Get translations for all strings provided by a printer.
+ *
+ * @param printer_obj       Printer object
+ * @param lang              BCP47 language tag to be used for translation
+ */
+void cpdbGetAllTranslations(cpdb_printer_obj_t *printer_obj, const char *lang);
+
 /**
  * Get the cpdb_media_t struct corresponding to a media-size supported by a printer.
  *
@@ -524,13 +536,6 @@ int cpdbGetMediaSize(cpdb_printer_obj_t *printer_obj, const char *media_name, in
  */
 int cpdbGetMediaMargins(cpdb_printer_obj_t *printer_obj, const char *media_name, cpdb_margin_t **margins);
 
-struct cpdb_async_obj_s
-{
-    cpdb_printer_obj_t *p;
-    cpdb_async_callback caller_cb;
-    void *user_data;
-};
-
 /**
  * Asynchronously fetch printer details and options.
  *
@@ -540,6 +545,18 @@ struct cpdb_async_obj_s
  * 
  */
 void cpdbAcquireDetails(cpdb_printer_obj_t *printer_obj, cpdb_async_callback caller_cb, void *user_data);
+
+/**
+ * Asynchronously fetch all printer strings translations,
+ * which can then be obtained using cpdbGet[...]Translation() functions.
+ * For synchronous version, look at cpdbGetAllTranslations().
+ *
+ * @param printer_obj       Printer object
+ * @param lang              BCP47 language tag to be used for translation
+ * @param caller_cb         Callback function
+ * @param user_data         User data to pass to callback functions
+ */
+void cpdbAcquireTranslations(cpdb_printer_obj_t *printer_obj, const char *lang, cpdb_async_callback caller_cb, void *user_data);
 
 /************************************************************************************************/
 /**

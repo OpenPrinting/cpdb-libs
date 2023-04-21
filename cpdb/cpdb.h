@@ -43,7 +43,7 @@ extern "C" {
 #define CPDB_PRINTER_ADDED_ARGS "(sssssbss)"
 #define CPDB_JOB_ARGS "(ssssssi)"
 #define CPDB_JOB_ARRAY_ARGS "a(ssssssi)"
-#define cpdbNewCStringArray(x) ((char **)(malloc(sizeof(char *) * x)))
+#define cpdbNewCStringArray(x) ((char **)(malloc(sizeof(char *) * (x))))
 
 typedef enum {
     CPDB_DEBUG_LEVEL_DEBUG,

@@ -218,8 +218,8 @@ GVariant *cpdbPackMediaArray(int num_val, int (*margins)[4]);
 #define CPDB_QUALITY_HIGH               N_("high")
 
 #define CPDB_SIDES_ONE_SIDED            N_("one-sided")
-#define CPDB_SIDES_TWO_SIDED_SHORT      N_("two-sided-short")
-#define CPDB_SIDES_TWO_SIDED_LONG       N_("two-sided-long")
+#define CPDB_SIDES_TWO_SIDED_SHORT      N_("two-sided-short-edge")
+#define CPDB_SIDES_TWO_SIDED_LONG       N_("two-sided-long-edge")
 
 #define CPDB_ORIENTATION_PORTRAIT       N_("3")
 #define CPDB_ORIENTATION_LANDSCAPE      N_("4")

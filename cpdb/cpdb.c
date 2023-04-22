@@ -59,6 +59,11 @@ void cpdbInit()
     }
 }
 
+char **cpdbNewCStringArray(int num_elems)
+{
+    return malloc(sizeof(char *) * num_elems);
+}
+
 gboolean cpdbGetBoolean(const char *g)
 {
     if (!g)

@@ -940,7 +940,6 @@ cpdb_options_t *cpdbGetAllOptions(cpdb_printer_obj_t *p)
     if (p->options)
         return p->options;
 
-    p->options = cpdbGetNewOptions();
     GError *error = NULL;
     int num_options, num_media;
     GVariant *var, *media_var;
@@ -952,23 +951,18 @@ cpdb_options_t *cpdbGetAllOptions(cpdb_printer_obj_t *p)
                                             &media_var,
                                             NULL,
                                             &error);
-    if (!error)
-    {
-        loginfo("Obtained %d options and %d media for %s %s\n",
-                num_options, num_media, p->id, p->backend_name);
-        cpdbUnpackOptions(num_options,
-                          var,
-                          num_media,
-                          media_var,
-                          p->options);
-        return p->options;
-    }
-    else 
+    if (error)
     {
         logerror("Error getting printer options for %s %s : %s\n",
                     p->id, p->backend_name, error->message);
         return NULL;
     }
+
+    loginfo("Obtained %d options and %d media for %s %s\n",
+            num_options, num_media, p->id, p->backend_name);
+    p->options = cpdbGetNewOptions();
+    cpdbUnpackOptions(num_options, var, num_media, media_var, p->options);
+    return p->options;
 }
 
 cpdb_option_t *cpdbGetOption(cpdb_printer_obj_t *p,
@@ -1736,7 +1730,7 @@ cpdb_settings_t *cpdbGetNewSettings()
 {
     cpdb_settings_t *s = g_new0(cpdb_settings_t, 1);
     s->count = 0;
-    s->table = g_hash_table_new_full(g_str_hash, g_str_equal, free, free);
+    s->table = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
     return s;
 }
 
@@ -1767,24 +1761,11 @@ void cpdbAddSetting(cpdb_settings_t *s,
         return;
     }
 
-    char *prev = g_hash_table_lookup(s->table, name);
-    if (prev)
-    {
-        /**
-         * The value is already there, so replace it instead
-         */
-        g_hash_table_replace(s->table,
-                             cpdbGetStringCopy(name),
-                             cpdbGetStringCopy(val));
-        free(prev);
-    }
-    else
-    {
-        g_hash_table_insert(s->table,
-                            cpdbGetStringCopy(name),
-                            cpdbGetStringCopy(val));
+    gboolean new_entry = g_hash_table_insert(s->table,
+                                             cpdbGetStringCopy(name),
+                                             cpdbGetStringCopy(val));
+    if (new_entry)
         s->count++;
-    }
 }
 
 gboolean cpdbClearSetting(cpdb_settings_t *s, const char *name)
@@ -1935,12 +1916,12 @@ cpdb_options_t *cpdbGetNewOptions()
     o->count = 0;
     o->table = g_hash_table_new_full(g_str_hash,
                                      g_str_equal,
-                                     NULL,
+                                     g_free,
                                      (GDestroyNotify) cpdbDeleteOption);
     o->media_count = 0;
     o->media = g_hash_table_new_full(g_str_hash,
                                      g_str_equal,
-                                     NULL,
+                                     g_free,
                                      (GDestroyNotify) cpdbDeleteMedia);
     return o;
 }
@@ -2076,7 +2057,7 @@ void cpdbUnpackOptions(int num_options,
             logdebug("  %s;\n", str);
             opt->supported_values[j] = cpdbGetStringCopy(str);
         }
-        g_hash_table_insert(options->table, opt->option_name, opt);
+        g_hash_table_insert(options->table, cpdbGetStringCopy(opt->option_name), opt);
     }
     
     options->media_count = num_media;
@@ -2105,7 +2086,7 @@ void cpdbUnpackOptions(int num_options,
             media->margins[j].top = t; 
             media->margins[j].bottom = b;
 		}
-		g_hash_table_insert(options->media, media->name, media);
+		g_hash_table_insert(options->media, cpdbGetStringCopy(media->name), media);
 	}
     
 }

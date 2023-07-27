@@ -336,41 +336,66 @@ static void fetchPrinterListFromBackend(cpdb_frontend_obj_t *f, const char *back
 
 static void cpdbActivateBackends(cpdb_frontend_obj_t *f)
 {
-    DIR *d;
     int len;
-    const char *info_dir_name;
-    struct dirent *dir;
-    PrintBackend *proxy;
-    char *backend_suffix;
+    char *service_name, *backend_suffix;
+    GDBusProxy *dbus_proxy;
+    PrintBackend *backend_proxy;
+    GVariantIter iter;
+    GError *error = NULL;
+    GVariant *service_names, *service_names_tuple;
 
     logdebug("Activating backends\n");
-    if ((info_dir_name = getenv("CPDB_BACKEND_INFO_DIR")) == NULL)
-      info_dir_name = CPDB_BACKEND_INFO_DIR;
-    if ((d = opendir(info_dir_name)) == NULL)
+    dbus_proxy = g_dbus_proxy_new_sync(f->connection,
+                                       G_DBUS_PROXY_FLAGS_NONE,
+                                       NULL,
+                                       "org.freedesktop.DBus",
+                                       "/org/freedesktop/DBus",
+                                       "org.freedesktop.DBus",
+                                       NULL,
+                                       &error);
+    if (error)
     {
-        logerror("Couldn't open backend info directory : %s\n",
-		 info_dir_name);
+        logerror("Error getting dbus proxy : %s", error->message);
+        g_error_free(error);
         return;
     }
-    len = strlen(CPDB_BACKEND_PREFIX);
-
-    while ((dir = readdir (d)) != NULL)
+    service_names_tuple = g_dbus_proxy_call_sync(dbus_proxy,
+                                                 "ListActivatableNames",
+                                                 NULL,
+                                                 G_DBUS_CALL_FLAGS_NONE,
+                                                 -1,
+                                                 NULL,
+                                                 &error);
+    if (error)
     {
-        if (strncmp(CPDB_BACKEND_PREFIX, dir->d_name, len) == 0)
+        logerror("Couldn't get activatable service names %s", error->message);
+        g_error_free(error);
+        return;
+    }
+    service_names = g_variant_get_child_value(service_names_tuple, 0);
+
+    len = strlen(CPDB_BACKEND_PREFIX);
+    g_variant_iter_init(&iter, service_names);
+    while (g_variant_iter_next(&iter, "s", &service_name))
+    {
+        if (g_str_has_prefix(service_name, CPDB_BACKEND_PREFIX))
         {
-            backend_suffix = cpdbGetStringCopy((dir->d_name) + len);
+            backend_suffix = cpdbGetStringCopy(service_name + len);
             loginfo("Found backend %s\n", backend_suffix);
-            proxy = cpdbCreateBackendFromFile(f->connection, dir->d_name);
-            g_hash_table_insert(f->backend, backend_suffix, proxy);
+            backend_proxy = cpdbCreateBackend(f->connection, service_name);
+            g_hash_table_insert(f->backend, backend_suffix, backend_proxy);
             f->num_backends++;
             fetchPrinterListFromBackend(f, backend_suffix);
         }
     }
-    closedir(d);
+
+    g_variant_unref(service_names);
+    g_variant_unref(service_names_tuple);
+    g_object_unref(backend_proxy);
 }
 
-PrintBackend *cpdbCreateBackendFromFile(GDBusConnection *connection,
-                                        const char *backend_file_name)
+PrintBackend *cpdbCreateBackend(GDBusConnection *connection,
+                                const char *service_name)
 {
     FILE *file = NULL;
     PrintBackend *proxy;
@@ -379,33 +404,11 @@ PrintBackend *cpdbCreateBackendFromFile(GDBusConnection *connection,
     const char *info_dir_name;
     char obj_path[CPDB_BSIZE];
     
-    backend_name = cpdbGetStringCopy(backend_file_name);
-    if ((info_dir_name = getenv("CPDB_BACKEND_INFO_DIR")) == NULL)
-      info_dir_name = CPDB_BACKEND_INFO_DIR;
-    path = cpdbConcatPath(info_dir_name, backend_file_name);
-    
-    if ((file = fopen(path, "r")) == NULL)
-    {
-        logerror("Error creating backend %s : Couldn't open %s for reading\n",
-                    backend_name, path);
-        free(path);
-        return NULL;
-    }
-    if (fscanf(file, "%1023s", obj_path) == 0)
-    {
-        logerror("Error creating backend %s : Couldn't parse %s\n",
-                    backend_name, path);
-        free(path);
-        fclose(file);
-        return NULL;
-    }
-    free(path);
-    fclose(file);
-    
+    backend_name = cpdbGetStringCopy(service_name);
     proxy = print_backend_proxy_new_sync(connection,
                                          0,
                                          backend_name,
-                                         obj_path,
+                                         CPDB_BACKEND_OBJ_PATH,
                                          NULL,
                                          &error);
     if (error)
@@ -414,7 +417,6 @@ PrintBackend *cpdbCreateBackendFromFile(GDBusConnection *connection,
                     backend_name, error->message);
         return NULL;
     }
-    
     return proxy;
 }
 
@@ -521,7 +523,7 @@ cpdb_printer_obj_t *cpdbFindPrinterObj(cpdb_frontend_obj_t *f,
 cpdb_printer_obj_t *cpdbGetDefaultPrinterForBackend(cpdb_frontend_obj_t *f,
                                                     const char *backend_name)
 {
-    char *def;
+    char *def, *service_name;
     GError *error = NULL;
     PrintBackend *proxy;
     cpdb_printer_obj_t *p = NULL;
@@ -530,7 +532,9 @@ cpdb_printer_obj_t *cpdbGetDefaultPrinterForBackend(cpdb_frontend_obj_t *f,
     if (proxy == NULL)
     {
         logwarn("Couldn't find backend proxy for %s\n", backend_name);
-        proxy = cpdbCreateBackendFromFile(f->connection, backend_name);
+        service_name = cpdbConcat(CPDB_BACKEND_PREFIX, backend_name);
+        proxy = cpdbCreateBackend(f->connection, service_name);
+        free(service_name);
         if (proxy == NULL)
         {
             logerror("Error getting default printer for backend : Couldn't get backend proxy\n");
@@ -1252,7 +1256,7 @@ cpdb_printer_obj_t *cpdbResurrectPrinterFromFile(const char *filename)
     char buf[CPDB_BSIZE];
     GDBusConnection *connection;
     char *name, *value, *path = NULL;
-    char *backend_file_name = NULL, *previous_parent_dialog = NULL;
+    char *service_name = NULL, *previous_parent_dialog = NULL;
     GError *error = NULL;
     cpdb_printer_obj_t *p;
 
@@ -1274,15 +1278,15 @@ cpdb_printer_obj_t *cpdbResurrectPrinterFromFile(const char *filename)
         goto parse_error;
     p->backend_name = cpdbGetStringCopy(strtok(buf, "#"));
     
-    backend_file_name = cpdbConcat(CPDB_BACKEND_PREFIX, p->backend_name);
+    service_name = cpdbConcat(CPDB_BACKEND_PREFIX, p->backend_name);
     if ((connection = get_dbus_connection()) == NULL)
     {
         logerror("Error resurrecting printer : Couldn't get dbus connection\n");
         goto failed;
     }
-    p->backend_proxy = cpdbCreateBackendFromFile(connection,
-                                                 backend_file_name);
-    free(backend_file_name);
+    p->backend_proxy = cpdbCreateBackend(connection,
+                                         service_name);
+    free(service_name);
     print_backend_call_replace_sync(p->backend_proxy, 
                                     previous_parent_dialog, 
                                     NULL, 
@@ -1338,7 +1342,7 @@ cpdb_printer_obj_t *cpdbResurrectPrinterFromFile(const char *filename)
 
     fclose(fp);
     free(path);
-    free(backend_file_name);
+    free(service_name);
     free(previous_parent_dialog);
     return p;
 
@@ -1349,8 +1353,8 @@ failed:
     if (fp)
         fclose(fp);
     free(path);
-    if (backend_file_name)
-        free(backend_file_name);
+    if (service_name)
+        free(service_name);
     if (previous_parent_dialog)
         free(previous_parent_dialog);
     return NULL;

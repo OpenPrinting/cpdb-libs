@@ -3,7 +3,6 @@ exec_prefix=@exec_prefix@
 includedir=@includedir@
 libdir=@libdir@
 datarootdir=@datarootdir@
-cpdb_backend_info_dir=@CPDB_BACKEND_INFO_DIR@
 cpdb_backend_exec_dir=@CPDB_BACKEND_EXEC_DIR@
 
 Cflags: -I${includedir}

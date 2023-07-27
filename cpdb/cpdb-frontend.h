@@ -193,7 +193,7 @@ void cpdbUnhideTemporaryPrinters(cpdb_frontend_obj_t *frontend_obj);
  * Read the file installed by the backend and create a proxy object
  * on the connection using the backend service name and object path
  */
-PrintBackend *cpdbCreateBackendFromFile(GDBusConnection *, const char *);
+PrintBackend *cpdbCreateBackend(GDBusConnection *, const char *);
 
 /**
  * Find the cpdb_printer_obj_t instance with a particular id and backend name.

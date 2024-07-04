@@ -143,8 +143,8 @@ gpointer control_thread(gpointer user_data)
     {
         printf("> ");
         fflush(stdout);
-        scanf("%1023s", buf);
-        if (strcmp(buf, "stop") == 0)
+        const int ret = scanf("%1023s", buf);
+        if (ret == EOF || strcmp(buf, "stop") == 0)
         {
             g_message("Stopping front end..\n");
 	        return (NULL);

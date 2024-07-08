@@ -285,7 +285,7 @@ static void fetchPrinterListFromBackend(cpdb_frontend_obj_t *f, const char *back
     }
 }
 
-bool cpdbRefreshPrinterList(cpdb_frontend_obj_t *f, char *backend) 
+bool cpdbRefreshPrinterList(cpdb_frontend_obj_t *f, const char *backend)
 { 
     int num_printers; 
     GVariantIter iter; 

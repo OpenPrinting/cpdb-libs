@@ -403,7 +403,7 @@ int cpdbPrintFD(cpdb_printer_obj_t *p, char **jobid, const char *title, char **s
 
 char *cpdbPrintSocket(cpdb_printer_obj_t *p, char **jobid, const char *title);
 
-bool cpdbRefreshPrinterList(cpdb_frontend_obj_t *f, char *backend);
+bool cpdbRefreshPrinterList(cpdb_frontend_obj_t *f, const char *backend);
 
 void cpdbPrinterCallback(cpdb_frontend_obj_t *f, cpdb_printer_obj_t *p, cpdb_printer_update_t change);
 

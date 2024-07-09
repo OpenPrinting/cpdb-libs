@@ -295,7 +295,7 @@ gpointer control_thread(gpointer user_data)
                 continue;
             }
             printf("%s : %s\n", option_name, option_val);
-            cpdbAddSettingToPrinter(p, cpdbGetStringCopy(option_name), cpdbGetStringCopy(option_val));
+            cpdbAddSettingToPrinter(p, g_strdup(option_name), g_strdup(option_val));
         }
         else if (strcmp(buf, "clear-setting") == 0)
         {

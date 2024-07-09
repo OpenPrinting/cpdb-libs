@@ -84,11 +84,6 @@ char *cpdbConcatSep(const char *s1, const char *s2);
 char *cpdbConcatPath(const char *s1, const char *s2);
 
 /**
- * Get string copy.
- */
-char *cpdbGetStringCopy(const char *s);
-
-/**
  * Get directory for user configuration files.
  */
 char *cpdbGetUserConfDir();

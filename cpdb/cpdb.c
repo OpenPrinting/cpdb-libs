@@ -78,9 +78,9 @@ gboolean cpdbGetBoolean(const char *g)
 char *cpdbConcat(const char *s1, const char *s2)
 {
     if (s1 == NULL)
-        return cpdbGetStringCopy(s2);
+        return g_strdup(s2);
     if (s2 == NULL)
-        return cpdbGetStringCopy(s1);
+        return g_strdup(s1);
 
     char *s = malloc(strlen(s1) + strlen(s2) + 1);
     sprintf(s, "%s%s", s1, s2);
@@ -104,15 +104,6 @@ char *cpdbConcatPath(const char *s1, const char *s2)
     return s;
 }
 
-char *cpdbGetStringCopy(const char *str)
-{
-    if (str == NULL)
-        return NULL;
-    char *s = malloc(sizeof(char) * (strlen(str) + 1));
-    strcpy(s, str);
-    return s;
-}
-
 void cpdbUnpackStringArray(GVariant *variant, int num_val, char ***val)
 {
     GVariantIter *iter;
@@ -132,7 +123,7 @@ void cpdbUnpackStringArray(GVariant *variant, int num_val, char ***val)
     for (i = 0; i < num_val; i++)
     {
         g_variant_iter_loop(iter, "(s)", &str);
-        array[i] = cpdbGetStringCopy(str);
+        array[i] = g_strdup(str);
         printf(" %s\n", str);
     }
     *val = array;
@@ -176,7 +167,7 @@ char *cpdbGetAbsolutePath(const char *file_path)
         return NULL;
 
     if (file_path[0] == '/')
-        return cpdbGetStringCopy(file_path);
+        return g_strdup(file_path);
 
     if (file_path[0] == '~')
     {
@@ -250,7 +241,7 @@ char *cpdbGetSysConfDir()
 
     if (env_xcd = getenv("XDG_CONFIG_DIRS"))
     {
-        env_xcd = cpdbGetStringCopy(env_xcd);
+        env_xcd = g_strdup(env_xcd);
         path = strtok(env_xcd, ":");
         while (path != NULL)
         {
@@ -286,10 +277,10 @@ char *cpdbGetGroup(const char *option_name)
     for (int i = 0; i < num_group; i++)
     {
         if (strncmp(option_name, cpdbGroupTable[i][0], strlen(cpdbGroupTable[i][0])) == 0)
-            return cpdbGetStringCopy(cpdbGroupTable[i][1]);
+            return g_strdup(cpdbGroupTable[i][1]);
     }
 
-    return cpdbGetStringCopy(CPDB_GROUP_ADVANCED);
+    return g_strdup(CPDB_GROUP_ADVANCED);
 }
 
 char *cpdbGetGroupTranslation2(const char *group_name, const char *lang)
@@ -301,7 +292,7 @@ char *cpdbGetGroupTranslation2(const char *group_name, const char *lang)
         ++_nl_msg_cat_cntr;
     }
 
-    return cpdbGetStringCopy(_(group_name));
+    return g_strdup(_(group_name));
 }
 
 static void cpdbDebugLog(CpdbDebugLevel msg_lvl, const char *msg)

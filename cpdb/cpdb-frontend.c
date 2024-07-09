@@ -148,7 +148,7 @@ void cpdbOnPrinterStateChanged(GDBusConnection *connection,
     cpdb_printer_obj_t *p = cpdbFindPrinterObj(f, printer_id, backend_name);
     if (p->state)
         free(p->state);
-    p->state = cpdbGetStringCopy(printer_state);
+    p->state = g_strdup(printer_state);
     p->accepting_jobs = printer_is_accepting_jobs;
     f->printer_cb(f, p, CPDB_CHANGE_PRINTER_STATE_CHANGED);
 }
@@ -411,7 +411,7 @@ void cpdbActivateBackends(cpdb_frontend_obj_t *f) {
         g_variant_iter_init(&iter, service_names);
         while (g_variant_iter_next(&iter, "s", &service_name)) {
             if (g_str_has_prefix(service_name, CPDB_BACKEND_PREFIX)) {
-                backend_suffix = cpdbGetStringCopy(service_name + len);
+                backend_suffix = g_strdup(service_name + len);
                 if (!g_hash_table_lookup(f->backend, backend_suffix)) {
                     loginfo("Found backend %s (%s)\n", backend_suffix,
                             i ? "Starting now" : "Already running");
@@ -494,7 +494,7 @@ PrintBackend *cpdbCreateBackend(GDBusConnection *connection,
     const char *info_dir_name;
     char obj_path[CPDB_BSIZE];
     
-    backend_name = cpdbGetStringCopy(service_name);
+    backend_name = g_strdup(service_name);
     proxy = print_backend_proxy_new_sync(connection,
                                          0,
                                          backend_name,
@@ -738,7 +738,7 @@ GList *cpdbLoadDefaultPrinters(const char *path)
     while (fgets(buf, sizeof(buf), fp) != NULL)
     {
         buf[strcspn(buf, "\r\n")] = 0;
-        printers = g_list_prepend(printers, cpdbGetStringCopy(buf));
+        printers = g_list_prepend(printers, g_strdup(buf));
     }
     printers = g_list_reverse(printers);
     logdebug("Loaded default printers from %s\n", path);
@@ -1356,11 +1356,11 @@ cpdb_printer_obj_t *cpdbResurrectPrinterFromFile(const char *filename)
 
     if (fgets(buf, sizeof(buf), fp) == NULL)
         goto parse_error;
-    previous_parent_dialog = cpdbGetStringCopy(strtok(buf, "#"));
+    previous_parent_dialog = g_strdup(strtok(buf, "#"));
 
     if (fgets(buf, sizeof(buf), fp) == NULL)
         goto parse_error;
-    p->backend_name = cpdbGetStringCopy(strtok(buf, "#"));
+    p->backend_name = g_strdup(strtok(buf, "#"));
     
     service_name = cpdbConcat(CPDB_BACKEND_PREFIX, p->backend_name);
     if ((connection = cpdbGetDbusConnection()) == NULL)
@@ -1384,27 +1384,27 @@ cpdb_printer_obj_t *cpdbResurrectPrinterFromFile(const char *filename)
 
     if (fgets(buf, sizeof(buf), fp) == NULL)
         goto parse_error;
-    p->id = cpdbGetStringCopy(strtok(buf, "#"));
+    p->id = g_strdup(strtok(buf, "#"));
 
     if (fgets(buf, sizeof(buf), fp) == NULL)
         goto parse_error;
-    p->name = cpdbGetStringCopy(strtok(buf, "#"));
+    p->name = g_strdup(strtok(buf, "#"));
 
     if (fgets(buf, sizeof(buf), fp) == NULL)
         goto parse_error;
-    p->location = cpdbGetStringCopy(strtok(buf, "#"));
+    p->location = g_strdup(strtok(buf, "#"));
 
     if (fgets(buf, sizeof(buf), fp) == NULL)
         goto parse_error;
-    p->info = cpdbGetStringCopy(strtok(buf, "#"));
+    p->info = g_strdup(strtok(buf, "#"));
 
     if (fgets(buf, sizeof(buf), fp) == NULL)
         goto parse_error;
-    p->make_and_model = cpdbGetStringCopy(strtok(buf, "#"));
+    p->make_and_model = g_strdup(strtok(buf, "#"));
 
     if (fgets(buf, sizeof(buf), fp) == NULL)
         goto parse_error;
-    p->state = cpdbGetStringCopy(strtok(buf, "#"));
+    p->state = g_strdup(strtok(buf, "#"));
 
     if (fscanf(fp, "%d\n", &p->accepting_jobs) == 0)
         goto parse_error;
@@ -1466,7 +1466,7 @@ char *cpdbGetOptionTranslation(cpdb_printer_obj_t *p,
         {
             logdebug("Found translation=%s; for option=%s;locale=%s;printer=%s#%s;\n",
                         translation, option_name, locale, p->id, p->backend_name);
-            return cpdbGetStringCopy(translation);
+            return g_strdup(translation);
         }
     }
 
@@ -1487,7 +1487,7 @@ char *cpdbGetOptionTranslation(cpdb_printer_obj_t *p,
     
     logdebug("Obtained translation=%s; for option=%s;locale=%s;printer=%s#%s;\n",
                 translation, option_name, locale, p->id, p->backend_name);
-    return cpdbGetStringCopy(translation);
+    return g_strdup(translation);
 }
 
 char *cpdbGetChoiceTranslation(cpdb_printer_obj_t *p,
@@ -1516,7 +1516,7 @@ char *cpdbGetChoiceTranslation(cpdb_printer_obj_t *p,
             logdebug("Found translation=%s; for option=%s;choice=%s;locale=%s;printer=%s#%s;\n",
                         translation, option_name, choice_name, locale, 
                         p->id, p->backend_name);
-            return cpdbGetStringCopy(translation);
+            return g_strdup(translation);
         }
     }
     
@@ -1539,7 +1539,7 @@ char *cpdbGetChoiceTranslation(cpdb_printer_obj_t *p,
     logdebug("Obtained translation=%s; for option=%s;choice=%s;locale=%s;printer=%s#%s;\n",
                 translation, option_name, choice_name, locale, 
                 p->id, p->backend_name);
-    return cpdbGetStringCopy(translation);
+    return g_strdup(translation);
 }
 
 
@@ -1565,7 +1565,7 @@ char *cpdbGetGroupTranslation(cpdb_printer_obj_t *p,
         {
             logdebug("Found translation=%s; for group=%s;locale=%s;printer=%s#%s;\n",
                         translation, group_name, locale, p->id, p->backend_name);
-            return cpdbGetStringCopy(translation);
+            return g_strdup(translation);
         }
     }
     
@@ -1587,7 +1587,7 @@ char *cpdbGetGroupTranslation(cpdb_printer_obj_t *p,
     
     logdebug("Obtained translation=%s; for group=%s;locale=%s;printer=%s#%s;\n",
                 translation, group_name, locale, p->id, p->backend_name);
-    return cpdbGetStringCopy(translation);
+    return g_strdup(translation);
 }
 
 void cpdbGetAllTranslations(cpdb_printer_obj_t *p,
@@ -1620,7 +1620,7 @@ void cpdbGetAllTranslations(cpdb_printer_obj_t *p,
     logdebug("Fetched translations for printer %s %s\n", p->id, p->backend_name);
 
     cpdbDeleteTranslations(p);
-    p->locale = cpdbGetStringCopy(locale);
+    p->locale = g_strdup(locale);
     p->translations = cpdbUnpackTranslations(translations);
 }
 
@@ -1769,7 +1769,7 @@ static void acquire_translations_cb(PrintBackend *proxy,
     else
     {
         cpdbDeleteTranslations(p);
-        p->locale = cpdbGetStringCopy(a->locale);
+        p->locale = g_strdup(a->locale);
         p->translations = cpdbUnpackTranslations(translations);
         a->caller_cb(p, TRUE, a->user_data);
     }
@@ -1797,7 +1797,7 @@ void cpdbAcquireTranslations(cpdb_printer_obj_t *p,
 
     cpdb_async_translations_obj_t *a = g_new0(cpdb_async_translations_obj_t, 1);
     a->p = p;
-    a->locale = cpdbGetStringCopy(locale);
+    a->locale = g_strdup(locale);
     a->caller_cb = caller_cb;
     a->user_data = user_data;
 
@@ -1850,8 +1850,8 @@ void cpdbAddSetting(cpdb_settings_t *s,
     }
 
     gboolean new_entry = g_hash_table_insert(s->table,
-                                             cpdbGetStringCopy(name),
-                                             cpdbGetStringCopy(val));
+                                             g_strdup(name),
+                                             g_strdup(val));
     if (new_entry)
         s->count++;
 }
@@ -2087,19 +2087,19 @@ void cpdbUnpackJobArray(GVariant *var,
                             &submit_time,
                             &size);
         logdebug("jobid=%s;\n", jobid);
-        jobs[i].job_id = cpdbGetStringCopy(jobid);
+        jobs[i].job_id = g_strdup(jobid);
         logdebug("title=%s;\n", title);
-        jobs[i].title = cpdbGetStringCopy(title);
+        jobs[i].title = g_strdup(title);
         logdebug("printer=%s;\n", printer);
-        jobs[i].printer_id = cpdbGetStringCopy(printer);
+        jobs[i].printer_id = g_strdup(printer);
         logdebug("backend_name=%s;\n", backend_name);
         jobs[i].backend_name = backend_name;
         logdebug("user=%s;\n", user);
-        jobs[i].user = cpdbGetStringCopy(user);
+        jobs[i].user = g_strdup(user);
         logdebug("state=%s;\n", state);
-        jobs[i].state = cpdbGetStringCopy(state);
+        jobs[i].state = g_strdup(state);
         logdebug("submit_time=%s;\n", submit_time);
-        jobs[i].submitted_at = cpdbGetStringCopy(submit_time);
+        jobs[i].submitted_at = g_strdup(submit_time);
         logdebug("size=%d;\n", size);
         jobs[i].size = size;
     }
@@ -2130,11 +2130,11 @@ void cpdbUnpackOptions(int num_options,
                             &name, &group, &def, &num, &sub_iter);
 
         logdebug("name=%s;\n", name);
-        opt->option_name = cpdbGetStringCopy(name);
+        opt->option_name = g_strdup(name);
         logdebug("group=%s;\n", group);
-        opt->group_name = cpdbGetStringCopy(group);
+        opt->group_name = g_strdup(group);
         logdebug("default=%s;\n", def);
-        opt->default_value = cpdbGetStringCopy(def);
+        opt->default_value = g_strdup(def);
         logdebug("num_choices=%d;\n", num);
         opt->num_supported = num;
         logdebug("choices:\n");
@@ -2143,9 +2143,9 @@ void cpdbUnpackOptions(int num_options,
         {
             g_variant_iter_loop(sub_iter, "(s)", &str);
             logdebug("  %s;\n", str);
-            opt->supported_values[j] = cpdbGetStringCopy(str);
+            opt->supported_values[j] = g_strdup(str);
         }
-        g_hash_table_insert(options->table, cpdbGetStringCopy(opt->option_name), opt);
+        g_hash_table_insert(options->table, g_strdup(opt->option_name), opt);
     }
     
     options->media_count = num_media;
@@ -2157,7 +2157,7 @@ void cpdbUnpackOptions(int num_options,
 							&name, &width, &length, &num, &sub_iter);
         
         logdebug("name=%s;\n", name);
-		media->name = cpdbGetStringCopy(name);
+        media->name = g_strdup(name);
         logdebug("width=%d;\n", width);
 		media->width = width;
         logdebug("length=%d;\n", length);
@@ -2174,7 +2174,7 @@ void cpdbUnpackOptions(int num_options,
             media->margins[j].top = t; 
             media->margins[j].bottom = b;
 		}
-		g_hash_table_insert(options->media, cpdbGetStringCopy(media->name), media);
+		g_hash_table_insert(options->media, g_strdup(media->name), media);
 	}
     
 }
@@ -2191,7 +2191,7 @@ static GHashTable *cpdbUnpackTranslations (GVariant *variant)
     {
         logdebug("Fetched translation '%s' : '%s'\n", key, value);
         g_hash_table_insert(translations,
-                            cpdbGetStringCopy(key), cpdbGetStringCopy(value));
+                            g_strdup(key), g_strdup(value));
     }
 
     return translations;

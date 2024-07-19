@@ -245,7 +245,7 @@ char *cpdbGetSysConfDir()
         path = strtok(env_xcd, ":");
         while (path != NULL)
         {
-            config_dir = cpdbConcatPath(CPDB_SYSCONFDIR, "cpdb");
+            config_dir = cpdbConcatPath(path, "cpdb");
             if (access(config_dir, R_OK) == 0 || mkdir(config_dir, CPDB_SYSCONFDIR_PERM) == 0)
             {
                 free(env_xcd);

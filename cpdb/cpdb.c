@@ -237,6 +237,7 @@ char *cpdbGetSysConfDir()
     config_dir = cpdbConcatPath(CPDB_SYSCONFDIR, "cpdb");
     if (access(config_dir, R_OK) == 0 || mkdir(config_dir, CPDB_SYSCONFDIR_PERM) == 0)
         return config_dir;
+    g_free(config_dir);
 #endif
 
     if (env_xcd = getenv("XDG_CONFIG_DIRS"))

@@ -74,7 +74,6 @@ struct cpdb_frontend_obj_s
 {
     GDBusConnection *connection;
 
-    int own_id;
     cpdb_printer_callback printer_cb;
 
     int num_backends;

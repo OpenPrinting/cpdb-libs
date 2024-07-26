@@ -154,6 +154,10 @@ gpointer control_thread(gpointer user_data)
             cpdbDisconnectFromDBus(f);
             cpdbConnectToDBus(f);
         }
+        else if (strcmp(buf, "version") == 0)
+        {
+            printf("CPDB v%s\n", cpdbGetVersion());
+        }
         else if (strcmp(buf, "get-all-printers") == 0)
         {
             cpdbGetAllPrinters(f);

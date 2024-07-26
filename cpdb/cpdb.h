@@ -53,6 +53,11 @@ typedef enum {
 } CpdbDebugLevel;
 
 /**
+ * Get CPDB version
+ */
+const char *cpdbGetVersion();
+
+/**
  * Initializes CPDB.
  * It’s the responsibility of the main program to set the locale.
  */

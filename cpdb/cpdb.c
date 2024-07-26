@@ -49,6 +49,10 @@ const char *cpdbGroupTable[][2] = {
 
 static void cpdbDebugLog(CpdbDebugLevel msg_lvl, const char *msg);
 
+const char *cpdbGetVersion()
+{
+    return PACKAGE_VERSION;
+}
 
 void cpdbInit()
 {

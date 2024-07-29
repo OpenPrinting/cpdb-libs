@@ -372,7 +372,10 @@ gpointer control_thread(gpointer user_data)
              * Eg. "CUPS" or "GCP"
              */
             cpdb_printer_obj_t *p = cpdbGetDefaultPrinterForBackend(f, backend_name);
-            printf("%s\n", p->name);
+            if (p)
+                printf("%s\n", p->name);
+            else
+                printf("No default printer for backend found\n");
         }
         else if (strcmp(buf, "set-user-default-printer") == 0)
         {

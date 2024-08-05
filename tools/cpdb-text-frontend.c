@@ -107,11 +107,6 @@ int main(int argc, char **argv)
     setlocale (LC_ALL, "");
     cpdbInit();
 
-    pid_t pid_temp = getpid();
-    char pid[20];
-    snprintf(pid, sizeof(pid), "%d", (int)pid_temp);
-
-    char *dialog_bus_name = malloc(300);
     f = cpdbGetNewFrontendObj(printer_cb);
 
     /** Uncomment the line below if you don't want to use the previously saved settings**/
@@ -122,7 +117,6 @@ int main(int argc, char **argv)
     g_thread_join(thread);
     cpdbStopBackendListRefreshing(f);
     cpdbDeleteFrontendObj(f);
-    free(dialog_bus_name);
 
     return 0;
 }

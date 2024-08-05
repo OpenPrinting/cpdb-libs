@@ -18,7 +18,6 @@ gpointer control_thread(gpointer user_data);
 gpointer background_thread(gpointer user_data);
 
 cpdb_frontend_obj_t *f;
-static const char *locale;
 
 static void printMedia(const cpdb_media_t *media)
 {
@@ -108,8 +107,6 @@ int main(int argc, char **argv)
     setlocale (LC_ALL, "");
     cpdbInit();
 
-    locale = getenv("LANGUAGE");
-
     pid_t pid_temp = getpid();
     char pid[20];
     snprintf(pid, sizeof(pid), "%d", (int)pid_temp);
@@ -134,6 +131,8 @@ gpointer control_thread(gpointer user_data)
 {
     fflush(stdout);
     char buf[BUFSIZE];
+
+    const char *locale = g_get_language_names()[0];
 
     cpdbConnectToDBus(f);
     displayAllPrinters(f);

@@ -2122,12 +2122,21 @@ void cpdbUnpackOptions(int num_options,
     
     options->count = num_options;
     g_variant_get(opts_var, "a(sssia(s))", &iter);
-    for (i = 0; i < num_options; i++)
+    i = 0;
+    while (g_variant_iter_loop(iter, "(sssia(s))",
+                               &name, &group, &def, &num, &sub_iter))
     {
-        opt = g_new0(cpdb_option_t, 1);
-        g_variant_iter_loop(iter, "(sssia(s))",
-                            &name, &group, &def, &num, &sub_iter);
+        if (i >= num_options)
+        {
+            logwarn("array of options contains more than expected amount");
+            g_free(name);
+            g_free(group);
+            g_free(def);
+            g_variant_iter_free(sub_iter);
+            break;
+        }
 
+        opt = g_new0(cpdb_option_t, 1);
         logdebug("name=%s;\n", name);
         opt->option_name = g_strdup(name);
         logdebug("group=%s;\n", group);
@@ -2138,44 +2147,71 @@ void cpdbUnpackOptions(int num_options,
         opt->num_supported = num;
         logdebug("choices:\n");
         opt->supported_values = cpdbNewCStringArray(num);
-        for (j = 0; j < num; j++)
+
+        j = 0;
+        while (g_variant_iter_loop(sub_iter, "(s)", &str))
         {
-            g_variant_iter_loop(sub_iter, "(s)", &str);
+            if (j >= num)
+            {
+                logwarn("array of values contains more than expected amount");
+                g_free(str);
+                break;
+            }
+
             logdebug("  %s;\n", str);
             opt->supported_values[j] = g_strdup(str);
+            j++;
         }
         g_hash_table_insert(options->table, g_strdup(opt->option_name), opt);
+        i++;
     }
+    g_variant_iter_free(iter);
     
     options->media_count = num_media;
     g_variant_get(media_var, "a(siiia(iiii))", &iter);
-    for (i = 0; i < num_media; i++)
+    i = 0;
+    while (g_variant_iter_loop(iter, "(siiia(iiii))",
+                               &name, &width, &length, &num, &sub_iter))
     {
-		media = g_new0(cpdb_media_t, 1);
-		g_variant_iter_loop(iter, "(siiia(iiii))",
-							&name, &width, &length, &num, &sub_iter);
-        
+        if (i >= num_media)
+        {
+            logwarn("array of media contains more than expected amount");
+            g_free(name);
+            g_variant_iter_free(sub_iter);
+            break;
+        }
+
+        media = g_new0(cpdb_media_t, 1);
         logdebug("name=%s;\n", name);
         media->name = g_strdup(name);
         logdebug("width=%d;\n", width);
-		media->width = width;
+        media->width = width;
         logdebug("length=%d;\n", length);
-		media->length = length;
+        media->length = length;
         logdebug("num_margins=%d;\n", num);
-		media->num_margins = num;
-		media->margins = g_new0(cpdb_margin_t, num);
-		for (j = 0; j < num; j++)
-		{
-			g_variant_iter_loop(sub_iter, "(iiii)", &l, &r, &t, &b);
+        media->num_margins = num;
+        media->margins = g_new0(cpdb_margin_t, num);
+
+        j = 0;
+        while (g_variant_iter_loop(sub_iter, "(iiii)", &l, &r, &t, &b))
+        {
+            if (j >= num)
+            {
+                logwarn("array of margins contains more than expected amount");
+                break;
+            }
+
             logdebug("    %d,%d,%d,%d;\n", l, r, t, b);
-			media->margins[j].left = l;
+            media->margins[j].left = l;
             media->margins[j].right = r;
             media->margins[j].top = t; 
             media->margins[j].bottom = b;
-		}
-		g_hash_table_insert(options->media, g_strdup(media->name), media);
-	}
-    
+            j++;
+        }
+        g_hash_table_insert(options->media, g_strdup(media->name), media);
+        i++;
+    }
+    g_variant_iter_free(iter);
 }
 
 static GHashTable *cpdbUnpackTranslations (GVariant *variant)

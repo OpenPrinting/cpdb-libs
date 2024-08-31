@@ -79,18 +79,6 @@ gboolean cpdbGetBoolean(const char *g)
     return FALSE;
 }
 
-char *cpdbConcat(const char *s1, const char *s2)
-{
-    if (s1 == NULL)
-        return g_strdup(s2);
-    if (s2 == NULL)
-        return g_strdup(s1);
-
-    char *s = malloc(strlen(s1) + strlen(s2) + 1);
-    sprintf(s, "%s%s", s1, s2);
-    return s;
-}
-
 char *cpdbConcatSep(const char *s1, const char *s2)
 {
     char *s = malloc(strlen(s1) + strlen(s2) + 2);

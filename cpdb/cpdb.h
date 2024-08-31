@@ -74,11 +74,6 @@ char **cpdbNewCStringArray(int num_elems);
 gboolean cpdbGetBoolean(const char *);
 
 /**
- * Concatenate two strings.
- */
-char *cpdbConcat(const char *s1, const char *s2);
-
-/**
  * Concatenate two strings with separator "#".
  */
 char *cpdbConcatSep(const char *s1, const char *s2);

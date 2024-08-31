@@ -198,25 +198,6 @@ char *cpdbGetAbsolutePath(const char *file_path)
     printf("%s\n", fp);
     return fp;
 }
-char *cpdbExtractFileName(const char *file_path)
-{
-    if (!file_path)
-        return NULL;
-
-    char *file_name_ptr = (char *)file_path;
-
-    char *x = (char *)file_path;
-    char c = *x;
-    while (c)
-    {
-        if (c == '/')
-            file_name_ptr = x;
-
-        x++;
-        c = *x;
-    }
-    return file_name_ptr;
-}
 
 char *cpdbGetUserConfDir()
 {

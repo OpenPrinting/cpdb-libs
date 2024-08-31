@@ -104,11 +104,6 @@ char *cpdbGetSysConfDir();
 char *cpdbGetAbsolutePath(const char *file_path);
 
 /**
- * Extract file name for path.
- */
-char *cpdbExtractFileName(const char* file_path);
-
-/**
  * Get a group for given option name.
  */
 char *cpdbGetGroup(const char *option_name);

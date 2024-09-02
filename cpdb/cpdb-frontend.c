@@ -689,7 +689,8 @@ cpdb_printer_obj_t *cpdbFindPrinterObj(cpdb_frontend_obj_t *f,
 cpdb_printer_obj_t *cpdbGetDefaultPrinterForBackend(cpdb_frontend_obj_t *f,
                                                     const char *backend_name)
 {
-    char *def, *service_name;
+    char *def = NULL;
+    char *service_name;
     GError *error = NULL;
     PrintBackend *proxy;
     cpdb_printer_obj_t *p = NULL;
@@ -716,6 +717,7 @@ cpdb_printer_obj_t *cpdbGetDefaultPrinterForBackend(cpdb_frontend_obj_t *f,
     }
     
     p = cpdbFindPrinterObj(f, def, backend_name);
+    g_free(def);
     if (p)
         logdebug("Obtained default printer %s for backend %s\n", p->id, backend_name);
     return p;

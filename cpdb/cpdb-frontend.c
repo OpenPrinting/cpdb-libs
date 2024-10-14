@@ -489,21 +489,20 @@ PrintBackend *cpdbCreateBackend(GDBusConnection *connection,
     FILE *file = NULL;
     PrintBackend *proxy;
     GError *error = NULL;
-    char *path, *backend_name;
+    char *path;
     const char *info_dir_name;
     char obj_path[CPDB_BSIZE];
-    
-    backend_name = g_strdup(service_name);
+
     proxy = print_backend_proxy_new_sync(connection,
                                          0,
-                                         backend_name,
+                                         service_name,
                                          CPDB_BACKEND_OBJ_PATH,
                                          NULL,
                                          &error);
     if (error)
     {
         logerror("Error creating backend proxy for %s : %s\n",
-                    backend_name, error->message);
+                    service_name, error->message);
         return NULL;
     }
     return proxy;

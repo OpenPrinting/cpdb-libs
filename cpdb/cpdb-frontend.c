@@ -327,7 +327,6 @@ bool cpdbRefreshPrinterList(cpdb_frontend_obj_t *f, const char *backend)
         // Compare the backend_name with the provided one 
         if (strcmp(backend_name, backend) == 0) { 
             // Check if backend_name is not in the printers hashtable 
-            char *printer_name = cpdbConcatSep(printer_obj->id, backend_name); 
             g_variant_iter_init(&iter, printers); 
             int printer_exists = 0;
             while (g_variant_iter_loop(&iter, "(v)", &printer)) 

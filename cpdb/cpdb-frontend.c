@@ -48,7 +48,7 @@ cpdb_frontend_obj_t *cpdbGetNewFrontendObj(cpdb_printer_callback printer_cb)
     f->printer = g_hash_table_new_full(g_str_hash,
                                        g_str_equal,
                                        free,
-                                       NULL);
+                                       g_free);
     f->last_saved_settings = cpdbReadSettingsFromDisk();
     return f;
 }
@@ -168,6 +168,8 @@ GDBusConnection *cpdbGetDbusConnection()
                                                         NULL,
                                                         NULL,
                                                         &error);
+
+    g_free(bus_addr);
     if (error)
     {
         logerror("Error acquiring bus connection : %s\n", error->message);

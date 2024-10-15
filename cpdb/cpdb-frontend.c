@@ -33,6 +33,11 @@ ________________________________________________ cpdb_frontend_obj_t ___________
 
 **/
 
+static void free_printer_object(void* printer)
+{
+    cpdbDeletePrinterObj(printer);
+}
+
 cpdb_frontend_obj_t *cpdbGetNewFrontendObj(cpdb_printer_callback printer_cb)
 {
     cpdb_frontend_obj_t *f = g_new0(cpdb_frontend_obj_t, 1);
@@ -48,7 +53,7 @@ cpdb_frontend_obj_t *cpdbGetNewFrontendObj(cpdb_printer_callback printer_cb)
     f->printer = g_hash_table_new_full(g_str_hash,
                                        g_str_equal,
                                        free,
-                                       g_free);
+                                       free_printer_object);
     f->last_saved_settings = cpdbReadSettingsFromDisk();
     return f;
 }

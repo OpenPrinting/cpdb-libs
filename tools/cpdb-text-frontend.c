@@ -420,7 +420,9 @@ gpointer control_thread(gpointer user_data)
                 continue;
             }
             cpdbAddSettingToPrinter(p, "copies", "3");
-            cpdbPrintFile(p, file_path);
+            char* job_id = cpdbPrintFile(p, file_path);
+            g_free(job_id);
+
         }
         else if (strcmp(buf, "pickle-printer") == 0)
         {

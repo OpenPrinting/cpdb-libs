@@ -181,7 +181,6 @@ GDBusConnection *cpdbGetDbusConnection()
 
 void cpdbConnectToDBus(cpdb_frontend_obj_t *f)
 {
-    GMainContext *context;
     GError *error = NULL;
 
     if ((f->connection = cpdbGetDbusConnection()) == NULL)
@@ -492,12 +491,8 @@ void cpdbStopListingPrinters(cpdb_frontend_obj_t *f){
 PrintBackend *cpdbCreateBackend(GDBusConnection *connection,
                                 const char *service_name)
 {
-    FILE *file = NULL;
     PrintBackend *proxy;
     GError *error = NULL;
-    char *path;
-    const char *info_dir_name;
-    char obj_path[CPDB_BSIZE];
 
     proxy = print_backend_proxy_new_sync(connection,
                                          0,
@@ -759,7 +754,7 @@ cpdb_printer_obj_t *cpdbGetDefaultPrinter(cpdb_frontend_obj_t *f)
     GHashTableIter iter;
     char *conf_dir, *path, *printer_id, *backend_name;
     cpdb_printer_obj_t *default_printer = NULL;
-    GList *printer, *user_printers, *system_printers, *printers = NULL;
+    GList *printer, *printers = NULL;
 
     if (f->num_printers == 0 || f->num_backends == 0)
     {
@@ -2160,7 +2155,6 @@ void cpdbUnpackJobArray(GVariant *var,
                         char *backend_name)
 {
     int i;
-    char *str;
     GVariantIter *iter;
     g_variant_get(var, CPDB_JOB_ARRAY_ARGS, &iter);
     int size;
@@ -2206,7 +2200,6 @@ void cpdbUnpackOptions(int num_options,
 {
     cpdb_option_t *opt;
     cpdb_media_t *media;
-    char buf[CPDB_BSIZE];
     int i, j, num, width, length, l, r, t, b;
     GVariantIter *iter, *sub_iter;
     char *str, *name, *def, *group;

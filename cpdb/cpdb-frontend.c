@@ -1144,6 +1144,7 @@ char *cpdbPrintFileWithJobTitle(cpdb_printer_obj_t *p,
     if (fd == -1) {
         logerror("Error connecting to backend for printing file %s on %s %s: %s\n",
                  file_path, p->id, p->backend_name, strerror(errno));
+        g_free(socket_path);
         return NULL;
     }
 
@@ -1152,6 +1153,7 @@ char *cpdbPrintFileWithJobTitle(cpdb_printer_obj_t *p,
         close(fd);
         logerror("Error opening file %s on %s %s: %s\n",
                  file_path, p->id, p->backend_name, strerror(errno));
+        g_free(socket_path);
         return NULL;
     }
 
@@ -1163,6 +1165,7 @@ char *cpdbPrintFileWithJobTitle(cpdb_printer_obj_t *p,
             fclose(file);
             close(fd);
             unlink(socket_path);
+            g_free(socket_path);
             logerror("Error sending file %s on %s %s: %s\n",
                      file_path, p->id, p->backend_name, strerror(errno));
             return NULL;
@@ -1172,6 +1175,7 @@ char *cpdbPrintFileWithJobTitle(cpdb_printer_obj_t *p,
     fclose(file);
     close(fd);
     unlink(socket_path);
+    g_free(socket_path);
 
     return jobid;
 }

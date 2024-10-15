@@ -19,10 +19,6 @@ static void                 cpdbUnpackOptions               (int                
                                                              int                        num_media,
                                                              GVariant *                 media_var,
                                                              cpdb_options_t *           options);
-static void                 cpdbUnpackJobArray              (GVariant *                 var,
-                                                             int                        num_jobs,
-                                                             cpdb_job_t *               jobs,
-                                                             char *                     backend_name);
 static GHashTable *         cpdbUnpackTranslations          (GVariant *                 translations);
 static void                 add_to_hash_table               (gpointer                   key,
                                                              gpointer                   value, 
@@ -2158,48 +2154,6 @@ void cpdbDeleteMedia(cpdb_media_t *media)
     free(media);
 }
 
-/**
- * ________________________________ cpdb_job_t __________________________
- */
-void cpdbUnpackJobArray(GVariant *var,
-                        int num_jobs,
-                        cpdb_job_t *jobs,
-                        char *backend_name)
-{
-    int i;
-    GVariantIter *iter;
-    g_variant_get(var, CPDB_JOB_ARRAY_ARGS, &iter);
-    int size;
-    char *jobid, *title, *printer, *user, *state, *submit_time;
-    for (i = 0; i < num_jobs; i++)
-    {
-        g_variant_iter_loop(iter,
-                            CPDB_JOB_ARGS,
-                            &jobid,
-                            &title,
-                            &printer,
-                            &user,
-                            &state,
-                            &submit_time,
-                            &size);
-        logdebug("jobid=%s;\n", jobid);
-        jobs[i].job_id = g_strdup(jobid);
-        logdebug("title=%s;\n", title);
-        jobs[i].title = g_strdup(title);
-        logdebug("printer=%s;\n", printer);
-        jobs[i].printer_id = g_strdup(printer);
-        logdebug("backend_name=%s;\n", backend_name);
-        jobs[i].backend_name = backend_name;
-        logdebug("user=%s;\n", user);
-        jobs[i].user = g_strdup(user);
-        logdebug("state=%s;\n", state);
-        jobs[i].state = g_strdup(state);
-        logdebug("submit_time=%s;\n", submit_time);
-        jobs[i].submitted_at = g_strdup(submit_time);
-        logdebug("size=%d;\n", size);
-        jobs[i].size = size;
-    }
-}
 /**
  * ________________________________utility functions__________________________
  */

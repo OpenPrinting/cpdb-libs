@@ -598,6 +598,7 @@ void getAllPrintersLookup(gpointer key, gpointer value, gpointer user_data){
         p = cpdbGetNewPrinterObj();
         cpdbFillBasicOptions(p, printer);
         cpdbPrintBasicOptions(p);
+        cpdbDeletePrinterObj(p);
     }
 }
 

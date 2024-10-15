@@ -237,6 +237,10 @@ void stopListingLookup(gpointer key, gpointer value, gpointer user_data){
     PrintBackend *proxy = value;
     GError *error = NULL; 
     print_backend_call_do_listing_sync(proxy, false, NULL, &error);
+    if (error) {
+        logerror("Error in DBus call doListing: %s\n", error->message);
+        g_error_free(error);
+    }
 }
 
 void cpdbDisconnectFromDBus(cpdb_frontend_obj_t *f)

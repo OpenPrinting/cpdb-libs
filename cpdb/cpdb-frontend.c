@@ -427,6 +427,7 @@ void cpdbActivateBackends(cpdb_frontend_obj_t *f) {
                 g_hash_table_remove(existing_backends, backend_suffix);
                 g_free(backend_suffix);
             }
+            g_free(service_name);
         }
 
         g_variant_unref(service_names);

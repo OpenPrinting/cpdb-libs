@@ -1980,6 +1980,7 @@ GVariant *cpdbSerializeToGVariant(cpdb_settings_t *s)
         g_variant_builder_add(builder, "(ss)", "NA", "NA");
 
     variant = g_variant_new("a(ss)", builder);
+    g_variant_builder_unref(builder);
     return variant;
 }
 

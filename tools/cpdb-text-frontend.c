@@ -428,7 +428,6 @@ gpointer control_thread(gpointer user_data)
         {
             char printer_id[BUFSIZE];
             char backend_name[BUFSIZE];
-            char job_id[BUFSIZE];
             scanf("%1023s%1023s", printer_id, backend_name);
             cpdb_printer_obj_t *p = cpdbFindPrinterObj(f, printer_id, backend_name);
             if (!p)

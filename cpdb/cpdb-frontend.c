@@ -947,8 +947,15 @@ void cpdbDeletePrinterObj(cpdb_printer_obj_t *p)
         return;
     
     logdebug("Deleting printer object %s\n", p->id);
-    if (p->backend_name)
-        free(p->backend_name);
+
+    g_free(p->backend_name);
+    g_free(p->id);
+    g_free(p->name);
+    g_free(p->location);
+    g_free(p->info);
+    g_free(p->state);
+    g_free(p->make_and_model);
+
     if (p->backend_proxy)
         g_object_unref(p->backend_proxy);
     if (p->options)

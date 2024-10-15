@@ -2136,7 +2136,11 @@ void cpdbDeleteOption(cpdb_option_t *opt)
     if (opt->group_name)
         free(opt->group_name);
     if (opt->supported_values)
+    {
+        for (int i = 0; i < opt->num_supported; i++)
+            free(opt->supported_values[i]);
         free(opt->supported_values);
+    }
     if (opt->default_value)
         free(opt->default_value);
 

@@ -1500,7 +1500,7 @@ char *cpdbGetOptionTranslation(cpdb_printer_obj_t *p,
     
     logdebug("Obtained translation=%s; for option=%s;locale=%s;printer=%s#%s;\n",
                 translation, option_name, locale, p->id, p->backend_name);
-    return g_strdup(translation);
+    return translation;
 }
 
 char *cpdbGetChoiceTranslation(cpdb_printer_obj_t *p,
@@ -1552,7 +1552,7 @@ char *cpdbGetChoiceTranslation(cpdb_printer_obj_t *p,
     logdebug("Obtained translation=%s; for option=%s;choice=%s;locale=%s;printer=%s#%s;\n",
                 translation, option_name, choice_name, locale, 
                 p->id, p->backend_name);
-    return g_strdup(translation);
+    return translation;
 }
 
 
@@ -1600,7 +1600,7 @@ char *cpdbGetGroupTranslation(cpdb_printer_obj_t *p,
     
     logdebug("Obtained translation=%s; for group=%s;locale=%s;printer=%s#%s;\n",
                 translation, group_name, locale, p->id, p->backend_name);
-    return g_strdup(translation);
+    return translation;
 }
 
 void cpdbGetAllTranslations(cpdb_printer_obj_t *p,

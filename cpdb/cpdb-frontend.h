@@ -37,7 +37,6 @@ typedef struct cpdb_options_s cpdb_options_t;
 typedef struct cpdb_option_s cpdb_option_t;
 typedef struct cpdb_margin_s cpdb_margin_t;
 typedef struct cpdb_media_s cpdb_media_t;
-typedef struct cpdb_job_s cpdb_job_t;
 
 typedef enum cpdb_printer_update_e {
     CPDB_CHANGE_PRINTER_ADDED,
@@ -924,23 +923,6 @@ struct cpdb_media_s
  * @param media             Media-size object
  */
 void cpdbDeleteMedia(cpdb_media_t *media);
-
-/************************************************************************************************/
-/**
-______________________________________ cpdb_job_t __________________________________________
-
-**/
-struct cpdb_job_s
-{
-    char *job_id;
-    char *title;
-    char *printer_id;
-    char *backend_name;
-    char *user;
-    char *state;
-    char *submitted_at;
-    int size;
-};
 
 #ifdef __cplusplus
 }

@@ -449,7 +449,9 @@ gpointer control_thread(gpointer user_data)
                 puts(MESSAGE_PRINTER_NOT_FOUND);
                 continue;
             }
-            printf("%s\n", cpdbGetOptionTranslation(p, option_name, locale));
+            char* translation = cpdbGetOptionTranslation(p, option_name, locale);
+            printf("%s\n", translation);
+            g_free(translation);
         }
         else if (strcmp(buf, "get-choice-translation") == 0)
         {
@@ -464,7 +466,9 @@ gpointer control_thread(gpointer user_data)
                 puts(MESSAGE_PRINTER_NOT_FOUND);
                 continue;
             }
-            printf("%s\n", cpdbGetChoiceTranslation(p, option_name, choice_name, locale));
+            char* translation = cpdbGetChoiceTranslation(p, option_name, choice_name, locale);
+            printf("%s\n", translation);
+            g_free(translation);
         }
         else if (strcmp(buf, "get-group-translation") == 0)
         {
@@ -478,7 +482,9 @@ gpointer control_thread(gpointer user_data)
                 puts(MESSAGE_PRINTER_NOT_FOUND);
                 continue;
             }
-            printf("%s\n", cpdbGetGroupTranslation(p, group_name, locale));
+            char* translation = cpdbGetGroupTranslation(p, group_name, locale);
+            printf("%s\n", translation);
+            g_free(translation);
         }
         else if (strcmp(buf, "get-all-translations") == 0)
         {

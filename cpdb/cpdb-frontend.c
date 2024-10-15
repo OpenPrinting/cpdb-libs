@@ -461,6 +461,7 @@ gpointer background_thread(gpointer user_data) {
         if (f->stop_flag) break;
         cpdbActivateBackends(f);
     }
+    return NULL;
 }
 
 // Start the background thread

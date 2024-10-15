@@ -1436,7 +1436,6 @@ cpdb_printer_obj_t *cpdbResurrectPrinterFromFile(const char *filename)
 
     fclose(fp);
     free(path);
-    free(service_name);
     free(previous_parent_dialog);
     return p;
 

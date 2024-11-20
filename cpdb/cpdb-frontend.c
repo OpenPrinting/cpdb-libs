@@ -1148,20 +1148,18 @@ char *cpdbPrintFile(cpdb_printer_obj_t *p,
 char *cpdbPrintFileWithJobTitle(cpdb_printer_obj_t *p,
                     const char *file_path, const char *title)
 {
+    FILE *file = fopen(file_path, "r");
+    if (file == NULL) {
+        logerror("Error opening file %s on %s %s: %s\n",
+                 file_path, p->id, p->backend_name, strerror(errno));
+        return NULL;
+    }
+
     char *jobid = NULL;
     char *socket_path = NULL;
     int fd = cpdbPrintFD(p, &jobid, title, &socket_path);
     if (fd == -1) {
         logerror("Error connecting to backend for printing file %s on %s %s: %s\n",
-                 file_path, p->id, p->backend_name, strerror(errno));
-        g_free(socket_path);
-        return NULL;
-    }
-
-    FILE *file = fopen(file_path, "r");
-    if (file == NULL) {
-        close(fd);
-        logerror("Error opening file %s on %s %s: %s\n",
                  file_path, p->id, p->backend_name, strerror(errno));
         g_free(socket_path);
         return NULL;

@@ -481,7 +481,7 @@ The frontend and backends, both running as the user who started the frontend, co
 
 The **frontend communicates with multiple backends, not knowing beforehand which backends are available**. Each backend has the **same D-Bus interface**, providing the same methods and signals with the same names.
 
-Multiple frontends can communicate with the same set of backends at the same time. The running backends take not of each frontend currently communicating with them.
+**Multiple frontends can communicate with the same set of backends at the same time.** The running backends take note of each frontend currently communicating with them.
 
 Backends are started on-demand, as soon as a frontend tries to access them. They terminate automatically if no frontend is communicating with them any more.
 
@@ -555,7 +555,7 @@ Subscribe to signals, here to add a newly discovered printer:
                                        NULL);
 ```
 
-For printing we also use domain sockets, to transfer the job data. We obtain a per-job domain socket via D-Bus method call for actual printing:
+For printing we also **use domain sockets**, to transfer the job data. We obtain a per-job domain socket via D-Bus method call for actual printing:
 ```
     print_backend_call_print_socket_sync(p->backend_proxy,
                                          p->id,
@@ -569,8 +569,8 @@ For printing we also use domain sockets, to transfer the job data. We obtain a p
 ```
 To complete the job we only have to feed the job data into the socket and close the file in the end.
 
-So the frontend's containerization must allow a rather free operation on the session D-Bus, not only single-client-to-single-service connections. We especially need to access the D-Bus itself to list all services and then talk to freely chosen services where we do not know beforehand which ones.
+**So the frontend's containerization must allow a rather free operation on the session D-Bus, not only single-client-to-single-service connections. We especially need to access the D-Bus itself to list all services and then talk to freely chosen services where we do not know beforehand which ones.
 
 The backend's containerization must allow D-Bus access to the service from multiple clients simultaneously, where it is not known beforehand which clients.
 
-There is also a way of sharing domain sockets needed, as for example the CUPS Snap does iwth CUPS' socket, only that here we need to provide a directory for bind-mounting which can hold several sockets.
+There is also a way of sharing domain sockets needed, as for example the CUPS Snap does iwth CUPS' socket, only that here we need to provide a directory for bind-mounting which can hold several sockets.**

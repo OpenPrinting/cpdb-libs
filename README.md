@@ -574,3 +574,5 @@ To complete the job we only have to feed the job data into the socket and close 
 **The backend's containerization must allow D-Bus access to the service from multiple clients simultaneously, where it is not known beforehand which clients.**
 
 **There is also a way of sharing domain sockets needed, as for example the CUPS Snap does iwth CUPS' socket, only that here we need to provide a directory for bind-mounting which can hold several sockets.**
+
+**The frontend does not need to communicate with any of the print environments, like CUPS, and the backends only need to communicate with the print environment they are made for. Generally only user access and not admin access to the print environments is needed, so listing available printers, setting options, and printing, not creating queues, removing jobs, ...**

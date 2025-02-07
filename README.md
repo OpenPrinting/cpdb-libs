@@ -569,8 +569,8 @@ For printing we also **use domain sockets**, to transfer the job data. We obtain
 ```
 To complete the job we only have to feed the job data into the socket and close the file in the end.
 
-**So the frontend's containerization must allow a rather free operation on the session D-Bus, not only single-client-to-single-service connections. We especially need to access the D-Bus itself to list all services and then talk to freely chosen services where we do not know beforehand which ones.
+**So the frontend's containerization must allow a rather free operation on the session D-Bus, not only single-client-to-single-service connections. We especially need to access the D-Bus itself to list all services and then talk to freely chosen services where we do not know beforehand which ones.**
 
-The backend's containerization must allow D-Bus access to the service from multiple clients simultaneously, where it is not known beforehand which clients.
+**The backend's containerization must allow D-Bus access to the service from multiple clients simultaneously, where it is not known beforehand which clients.**
 
-There is also a way of sharing domain sockets needed, as for example the CUPS Snap does iwth CUPS' socket, only that here we need to provide a directory for bind-mounting which can hold several sockets.**
+**There is also a way of sharing domain sockets needed, as for example the CUPS Snap does iwth CUPS' socket, only that here we need to provide a directory for bind-mounting which can hold several sockets.**

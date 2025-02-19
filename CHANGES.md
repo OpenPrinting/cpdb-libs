@@ -1,4 +1,134 @@
-# CHANGES - Common Print Dialog Backends - Libraries - v2.0b6 - 2024-06-18
+# CHANGES - Common Print Dialog Backends - Libraries - v2.0b7 - 2025-02-19
+
+## CHANGES IN V2.0b7 (19th February 2025)
+
+- Add capability to check CPDB version at runtime
+  This allows third-party applications to easily manage different CPDB
+  releases. This is especially important when shipping pre-built
+  binaries of such applications implementing CPDB, as the end users
+  may be running outdated and potentially vulnerable versions of CPDB
+  (Pull request #49).
+
+- Allow to extract translations from table
+  (Pull request #58)
+
+- `cpdb-text-frontend`: Get locale via GLib
+  Instead of only supporting the LANGUAGE environment variable that's
+  not necessarily set, use GLib's `g_get_language_names` to detect the
+  locale to use in the text frontend which takes other environment
+  variables into account as well (Pull request #51).
+
+- `cpdb-text-frontend`: Quit on EOF (Ctrl + D)
+  Quit the text frontend when scanf returns EOF, which e.g. happens
+  when the user presses Ctrl + D. Previously, pressing Ctrl + D would
+  result in the loop running indefinitely, printing ">" without end
+  (Pull request #38).
+
+- Added API function `cpdbRefreshPrinterList()` to refresh the printer list
+  (Pull request #35)
+
+- New API function `cpdbPrinterCallback()`
+  - Was `printer_callback()` in `cpdb-text-frontend`
+  (Pull request #36)
+
+- Turn cpdbFillBasicOptions() into a frontend API function
+  (Pull request #37)
+
+- Turn some static functions into frontend API functions
+  - `on_printer_added()` -> `cpdbOnPrinterAdded()`
+  - `on_printer_removed()` -> `cpdbOnPrinterRemoved()`
+  - `on_printer_state_changed()` -> `cpdbOnPrinterStateChanged()`
+  (Pull request #36)
+
+- Turned static function `get_dbus_connection()` into API function
+  `cpdbGetDbusConnection()`
+  (Pull request #35)
+
+- Removed unused parameter `instance_name` from API functions
+  `cpdbGetNewFrontendObj()` and `cpdbStartListingPrinters()`
+  (Pull request #41)
+
+- `cpdb-text-frontend`: Add null check for get-default-printer
+  Instead of crashing, asking for the default printer for a
+  non-existing backend now prints a decent error message (Pull request
+  #50).
+
+- `cpdbConcatPath()`: Actually check `XDG_CONFIG_DIRS`
+  Instead of using `CPDB_SYSCONFDIR` again as it was already done
+  earlier, and doing so in a loop, use the actual path extracted from
+  the `XDG_CONFIG_DIRS` environment variable (Pull request #48).
+
+- frontend: Check file before creating print job
+  Try to open the file to be printed at the given file path before
+  creating a print job using `cpdbPrintFD()`, to avoid creation of a
+  "dead" job which needs to get manually canceled (Pull request #78).
+
+- Correct DBus calls to add, delete, and state change of printers
+  (Pull request #44)
+
+- Pass backend name to `cpdbRefreshPrinterList()` as `const char*`
+  Use `const char*` instead of `char*` for the `backend` param of
+  `cpdbRefreshPrinterList()`. `const char*` is the usual way to pass C
+  strings. That also simplifies using the function (Pull request #40).
+
+- `cpdb-text-frontend`: Don't crash when printer doesn't exist
+  Instead of crashing due to a NULL dereference, print a message and
+  skip further processing of the current command when
+  `cpdbFindPrinterObj` returns NULL, e.g. because the user has entered
+  the name of a nonexisting printer or backend (Pull request #39).
+
+- Replace `cpdbGetStringCopy()` with `g_strdup()`
+  GLib's `g_strdup()` already provides the same functionality as
+  `cpdbGetStringCopy()`, so there's no need to have a custom
+  implementation and even make that part of the public API (Pull
+  request #42).
+
+- Replace `cpdbConcat()` with `g_strconcat()`
+  GLib's `g_strconcat` already provides the functionality to
+  concatenate strings, so there's no need to have `cpdbConcat` as a
+  custom implementation and even make that part of the public API
+  (Pull request #55).
+
+- Drop several unused variables
+  (Pull requests #52, #64, #68)
+
+- Drop unused `cpdb_job_t` and `cpdbUnpackJobArray()`
+  Got unused since we stream the print data through a Unix domain
+  socket (Pull request #30). Removed with pull request #73.
+
+- Drop unused `cpdbExtractFileName()` (Pull request #56)
+
+- Drop unused `own_id` member of frontend data structure
+  (Pull request #46)
+
+- Fixed tons of memory leaks
+  - `cpdbGetSysConfDir()` (Pull request #47)
+  - `cpdbUnpackOptions()` (Pull request #53)
+  - `cpdb-text-frontend`: Fix memory leak in `add-setting()` (Pull request #54)
+  - `cpdbGetDefaultPrinterForBackend()` (Pull request #57)
+  - `cpdbCreateBackend()` (Pull request #59)
+  - `cpdbRefreshPrinterList()` (Pull request #60)
+  - Fixing a memory leak in `f->printer` hasg table (Pull request #61)
+  - `cpdbPrintFileWithJobTitle()` (Pull request #62)
+  - `cpdb-text-frontend`: Fix memory leak in `print-file()` (Pull request #63)
+  - Unref `GVariantBuilder` to fix memory leak (Pull request #65)
+  - `cpdbActivateBackends()` (Pull request #66)
+  - Log and free GError in call to `doListing` (Pull request #67)
+  - Delete printer objects when deleting hash table (Pull request #71)
+  - `cpdbDeletePrinterObj()` (Pull request #72)
+  - `cpdbDeleteOption()` (Pull request #74)
+  - More in `cpdb-text-frontend` (Pull requests #75, #76)
+  - `cpdbGet...Translation()` (Pull request #77)
+
+- Fix potential double-free in `cpdbResurrectPrinterFromFile()`
+  (Pull request #69)
+
+- README.md: Explained inner workings of CPDB and gave containerization hints
+
+- Documentation for newly added API functions
+  Added header comments for auto-generating developer documentation
+  (Pull request #43).
+
 
 ## CHANGES IN V2.0b6 (18th June 2024)
 

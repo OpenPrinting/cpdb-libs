@@ -102,12 +102,11 @@ static void acquire_translations_callback(cpdb_printer_obj_t *p, int success, vo
 
 int main(int argc, char **argv)
 {
-    cpdb_printer_callback printer_cb = (cpdb_printer_callback)cpdbPrinterCallback;
-
     setlocale (LC_ALL, "");
     cpdbInit();
 
-    f = cpdbGetNewFrontendObj(printer_cb);
+    // Using the default callback by passing NULL
+    f = cpdbGetNewFrontendObj(NULL);
 
     /** Uncomment the line below if you don't want to use the previously saved settings**/
     cpdbIgnoreLastSavedSettings(f);

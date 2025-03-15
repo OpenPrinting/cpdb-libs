@@ -91,11 +91,20 @@ struct cpdb_frontend_obj_s
 };
 
 /**
+ * Default callback function for printer updates.
+ * Logs printer updates to the console.
+ * 
+ * @param frontend_obj      Frontend instance
+ * @param printer_obj       Printer object updated
+ * @param update            Type of update
+ */
+void cpdbPrinterCallback(cpdb_frontend_obj_t *frontend_obj, cpdb_printer_obj_t *printer_obj, cpdb_printer_update_t update);
+
+/**
  * Get a new cpdb_frontend_obj_t instance.
  * 
- * @param instance_name     Unique name for the frontend object, can be NULL
- * @param printer_cb        Callback function for any printer updates
- * @param change            Type of update
+ * @param printer_cb        Callback function for any printer updates.
+ *                          If NULL is passed, the default cpdbPrinterCallback function will be used.
  * 
  * @return                  Frontend instance
  */

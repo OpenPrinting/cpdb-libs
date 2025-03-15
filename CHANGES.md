@@ -2,10 +2,6 @@
 
 ## CHANGES IN V2.0b7 (19th February 2025)
 
-- Allow NULL for the callback in cpdbGetNewFrontendObj()
-  This enhancement allows calling cpdbGetNewFrontendObj(NULL) to use the default
-  callback function cpdbPrinterCallback(), making the API simpler to use.
-
 - Add capability to check CPDB version at runtime
   This allows third-party applications to easily manage different CPDB
   releases. This is especially important when shipping pre-built

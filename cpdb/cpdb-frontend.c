@@ -39,7 +39,7 @@ cpdb_frontend_obj_t *cpdbGetNewFrontendObj(cpdb_printer_callback printer_cb)
     cpdb_frontend_obj_t *f = g_new0(cpdb_frontend_obj_t, 1);
     
     f->connection = NULL;
-    f->printer_cb = printer_cb;
+    f->printer_cb = printer_cb ? printer_cb : cpdbPrinterCallback;
     f->num_backends = 0;
     f->backend = g_hash_table_new_full(g_str_hash,
                                        g_str_equal,

@@ -83,7 +83,6 @@ void cpdbPrinterCallback(cpdb_frontend_obj_t *f, cpdb_printer_obj_t *p, cpdb_pri
 
     case CPDB_CHANGE_PRINTER_REMOVED:
         g_message("Removed printer %s : %s!\n", p->name, p->backend_name);
-        cpdbDeletePrinterObj(p);
         break;
     
     case CPDB_CHANGE_PRINTER_STATE_CHANGED:
@@ -129,6 +128,7 @@ void cpdbOnPrinterRemoved(GDBusConnection *connection,
     g_variant_get(parameters, "(ss)", &printer_id, &backend_name);
     cpdb_printer_obj_t *p = cpdbRemovePrinter(f, printer_id, backend_name);
     f->printer_cb(f, p, CPDB_CHANGE_PRINTER_REMOVED);
+    cpdbDeletePrinterObj(p);
 }
 
 void cpdbOnPrinterStateChanged(GDBusConnection *connection,

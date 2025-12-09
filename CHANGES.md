@@ -1,4 +1,23 @@
-# CHANGES - Common Print Dialog Backends - Libraries - v2.0b7 - 2025-02-19
+# CHANGES - Common Print Dialog Backends - Libraries - v2.0b8 - 2025-12-10
+
+## CHANGES IN V2.0b8 (10th December 2025)
+
+- Bump soname of both libraries from 2 to 3
+  Usually, we do consider an API stable before the first release
+  candidate, so we removed some API functions between the 2.0b5
+  and 2.0b7 releases, but some distros included 2.0b5 and it so
+  we are bumping the soname to make distro's build systems happy.
+  (Pull request #84)
+
+- Move freeing of printer objects from cpdbPrinterCallback() to
+  cpdbOnPrinterRemoved() for API consistence
+  (Issue #79, Pull request #83)
+
+- Allow NULL for the callback in cpdbGetNewFrontendObj()
+  If NULL is supplied for the callback, the default callback
+  cpdbPrinterCallback() is used, which just logs the printer updates.
+  (Pull request #82)
+
 
 ## CHANGES IN V2.0b7 (19th February 2025)
 

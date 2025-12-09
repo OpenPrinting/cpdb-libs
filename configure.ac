@@ -4,7 +4,7 @@
 AC_PREREQ([2.69])
 
 dnl Package name and version...
-AC_INIT([cpdb-libs], [2.0b7], [https://github.com/OpenPrinting/cpdb-libs/issues], [cpdb-libs], [https://github.com/OpenPrinting/cpdb-libs])
+AC_INIT([cpdb-libs], [2.0b8], [https://github.com/OpenPrinting/cpdb-libs/issues], [cpdb-libs], [https://github.com/OpenPrinting/cpdb-libs])
 
 AC_CONFIG_SRCDIR([cpdb/cpdb-frontend.h])
 

@@ -715,7 +715,8 @@ cpdb_printer_obj_t *cpdbGetDefaultPrinterForBackend(cpdb_frontend_obj_t *f,
     print_backend_call_get_default_printer_sync(proxy, &def, NULL, &error);
     if (error)
     {
-        logerror("Error getting default printer for backend : %s\n", error->message);
+        logerror("Error getting default printer for backend %s : %s\n",
+                 backend_name, error->message);
         return NULL;
     }
     

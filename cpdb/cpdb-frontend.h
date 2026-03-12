@@ -88,6 +88,7 @@ struct cpdb_frontend_obj_s
     cpdb_settings_t *last_saved_settings; /** The last saved settings to disk */
 
     GThread *background_thread;
+    GSList *dbus_subscriptions;
 };
 
 /**

@@ -29,6 +29,7 @@ libcpdb_frontend_la_CPPFLAGS += $(GIOUNIX_CFLAGS)
 libcpdb_frontend_la_CPPFLAGS += -I..
 
 libcpdb_frontend_la_LIBADD  = -lpthread -lm -lcrypt
+libcpdb_frontend_la_LIBADD += libcpdb.la
 libcpdb_frontend_la_LIBADD += $(GLIB_LIBS)
 libcpdb_frontend_la_LIBADD += $(GIO_LIBS)
 libcpdb_frontend_la_LIBADD += $(GIOUNIX_LIBS)

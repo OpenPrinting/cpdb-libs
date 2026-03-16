@@ -34,7 +34,7 @@ jobs:
 
       - name: Install prerequisite
         run: |
-               sudo apt-get install autoconf autopoint libglib2.0-dev libdbus-1-dev libtool -y 
+               sudo apt-get install -y autoconf autopoint libglib2.0-dev libdbus-1-dev libtool 
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4

@@ -183,6 +183,7 @@ GDBusConnection *cpdbGetDbusConnection()
 void cpdbConnectToDBus(cpdb_frontend_obj_t *f)
 {
     GError *error = NULL;
+    guint id;
 
     if ((f->connection = cpdbGetDbusConnection()) == NULL)
     {
@@ -190,7 +191,7 @@ void cpdbConnectToDBus(cpdb_frontend_obj_t *f)
         return;
     }
     
-    g_dbus_connection_signal_subscribe(f->connection,
+    id = g_dbus_connection_signal_subscribe(f->connection,
                                        NULL,                            //Sender name
                                        "org.openprinting.PrintBackend", //Sender interface
                                        CPDB_SIGNAL_PRINTER_ADDED,       //Signal name
@@ -200,8 +201,9 @@ void cpdbConnectToDBus(cpdb_frontend_obj_t *f)
                                        cpdbOnPrinterAdded,                //callback
                                        f,                            //user_data
                                        NULL);
+    f->dbus_subscriptions = g_slist_prepend(f->dbus_subscriptions, GUINT_TO_POINTER(id));
 
-    g_dbus_connection_signal_subscribe(f->connection,
+    id = g_dbus_connection_signal_subscribe(f->connection,
                                        NULL,                            //Sender name
                                        "org.openprinting.PrintBackend", //Sender interface
                                        CPDB_SIGNAL_PRINTER_REMOVED,     //Signal name
@@ -211,7 +213,9 @@ void cpdbConnectToDBus(cpdb_frontend_obj_t *f)
                                        cpdbOnPrinterRemoved,              //callback
                                        f,                            //user_data
                                        NULL);
-    g_dbus_connection_signal_subscribe(f->connection,
+    f->dbus_subscriptions = g_slist_prepend(f->dbus_subscriptions, GUINT_TO_POINTER(id));
+
+    id = g_dbus_connection_signal_subscribe(f->connection,
                                        NULL,                                //Sender name
                                        "org.openprinting.PrintBackend",     //Sender interface
                                        CPDB_SIGNAL_PRINTER_STATE_CHANGED,   //Signal name
@@ -221,6 +225,7 @@ void cpdbConnectToDBus(cpdb_frontend_obj_t *f)
                                        cpdbOnPrinterStateChanged,            //callback
                                        f,                                //user_data
                                        NULL);
+    f->dbus_subscriptions = g_slist_prepend(f->dbus_subscriptions, GUINT_TO_POINTER(id));
 
 
     if (error)
@@ -250,6 +255,10 @@ void cpdbDisconnectFromDBus(cpdb_frontend_obj_t *f)
         logwarn("Already disconnected from DBus\n");
         return;
     }
+
+    for (GSList *sub = f->dbus_subscriptions; sub; sub = sub->next)
+        g_dbus_connection_signal_unsubscribe (f->connection, GPOINTER_TO_UINT(sub->data));
+    g_clear_pointer(&f->dbus_subscriptions, g_slist_free);
     g_hash_table_foreach(f->backend, stopListingLookup, NULL);
     g_dbus_connection_flush_sync(f->connection, NULL, NULL);
     g_dbus_connection_close_sync(f->connection, NULL, NULL);

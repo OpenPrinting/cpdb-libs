@@ -1093,7 +1093,8 @@ cpdb_options_t *cpdbGetAllOptions(cpdb_printer_obj_t *p)
     return p->options;
 }
 
-cpdb_capabilities_t *cpdbGetAllCapabilities(cpdb_printer_obj_t *p)
+cpdb_capabilities_t *cpdbGetAllCapabilities(cpdb_printer_obj_t *p,
+                                            const char *locale)
 {
     if (p == NULL)
     {
@@ -1101,11 +1102,13 @@ cpdb_capabilities_t *cpdbGetAllCapabilities(cpdb_printer_obj_t *p)
         return NULL;
     }
 
+    const char *lang = locale ? locale : "";
     GError *error = NULL;
     int num_capabilities, num_media;
     GVariant *var, *media_var;
     print_backend_call_get_all_capabilities_sync(p->backend_proxy,
                                                  p->id,
+                                                 lang,
                                                  &num_capabilities,
                                                  &var,
                                                  &num_media,
@@ -2349,13 +2352,23 @@ void cpdbDeleteCapability(cpdb_capability_t *cap)
 
     if (cap->option_name)
         free(cap->option_name);
+    if (cap->human_readable_name)
+        free(cap->human_readable_name);
     if (cap->group_name)
         free(cap->group_name);
+    if (cap->human_readable_group)
+        free(cap->human_readable_group);
     if (cap->supported_values)
     {
         for (int i = 0; i < cap->num_supported; i++)
             free(cap->supported_values[i]);
         free(cap->supported_values);
+    }
+    if (cap->human_readable_choices)
+    {
+        for (int i = 0; i < cap->num_supported; i++)
+            free(cap->human_readable_choices[i]);
+        free(cap->human_readable_choices);
     }
     if (cap->default_value)
         free(cap->default_value);
@@ -2416,13 +2429,21 @@ static cpdb_capabilities_t *options_to_capabilities(cpdb_options_t *opts)
         cpdb_option_t *opt = (cpdb_option_t *)value;
         cpdb_capability_t *cap = g_new0(cpdb_capability_t, 1);
         cap->option_name = g_strdup(opt->option_name);
+        /* No locale-aware translation available from the old GetAllOptions
+         * path; echo raw name as best-effort human-readable fallback. */
+        cap->human_readable_name = g_strdup(opt->option_name);
         cap->group_name = g_strdup(opt->group_name);
+        cap->human_readable_group = g_strdup(opt->group_name);
         cap->type = CPDB_CAP_UNKNOWN;
         cap->default_value = g_strdup(opt->default_value);
         cap->num_supported = opt->num_supported;
         cap->supported_values = cpdbNewCStringArray(cap->num_supported);
+        cap->human_readable_choices = cpdbNewCStringArray(cap->num_supported);
         for (int j = 0; j < cap->num_supported; j++)
+        {
             cap->supported_values[j] = g_strdup(opt->supported_values[j]);
+            cap->human_readable_choices[j] = g_strdup(opt->supported_values[j]);
+        }
         cap->range_lower = 0;
         cap->range_upper = 0;
         g_hash_table_insert(caps->table, g_strdup(cap->option_name), cap);
@@ -2568,19 +2589,23 @@ void cpdbUnpackCapabilities(int num_capabilities,
     cpdb_media_t *media;
     int i, j, num, width, length, l, r, t, b, type, range_lower, range_upper;
     GVariantIter *iter, *sub_iter;
-    char *str, *name, *def, *group;
+    char *str, *name, *human_name, *group, *human_group, *def, *choice_label;
 
     capabilities->count = num_capabilities;
-    g_variant_get(caps_var, "a(ssisia(s)ii)", &iter);
+    g_variant_get(caps_var, "a(sssisia(ss)ii)", &iter);
     i = 0;
-    while (g_variant_iter_loop(iter, "(ssisia(s)ii)",
-                               &name, &group, &type, &def, &num, &sub_iter, &range_lower, &range_upper))
+    while (g_variant_iter_loop(iter, "(sssisia(ss)ii)",
+                               &name, &human_name, &group, &human_group,
+                               &type, &def, &num, &sub_iter,
+                               &range_lower, &range_upper))
     {
         if (i >= num_capabilities)
         {
             logwarn("array of capabilities contains more than expected amount");
             g_free(name);
+            g_free(human_name);
             g_free(group);
+            g_free(human_group);
             g_free(def);
             g_variant_iter_free(sub_iter);
             break;
@@ -2589,8 +2614,12 @@ void cpdbUnpackCapabilities(int num_capabilities,
         cap = g_new0(cpdb_capability_t, 1);
         logdebug("name=%s;\n", name);
         cap->option_name = g_strdup(name);
+        logdebug("human_name=%s;\n", human_name);
+        cap->human_readable_name = g_strdup(human_name);
         logdebug("group=%s;\n", group);
         cap->group_name = g_strdup(group);
+        logdebug("human_group=%s;\n", human_group);
+        cap->human_readable_group = g_strdup(human_group);
         logdebug("type=%d;\n", type);
         cap->type = type;
         logdebug("default=%s;\n", def);
@@ -2602,19 +2631,22 @@ void cpdbUnpackCapabilities(int num_capabilities,
         cap->range_upper = range_upper;
         logdebug("choices:\n");
         cap->supported_values = cpdbNewCStringArray(num);
+        cap->human_readable_choices = cpdbNewCStringArray(num);
 
         j = 0;
-        while (g_variant_iter_loop(sub_iter, "(s)", &str))
+        while (g_variant_iter_loop(sub_iter, "(ss)", &str, &choice_label))
         {
             if (j >= num)
             {
                 logwarn("array of values contains more than expected amount");
                 g_free(str);
+                g_free(choice_label);
                 break;
             }
 
-            logdebug("  %s;\n", str);
+            logdebug("  %s / %s;\n", str, choice_label);
             cap->supported_values[j] = g_strdup(str);
+            cap->human_readable_choices[j] = g_strdup(choice_label);
             j++;
         }
         g_hash_table_insert(capabilities->table, g_strdup(cap->option_name), cap);

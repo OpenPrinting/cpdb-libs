@@ -450,10 +450,13 @@ cpdb_options_t *cpdbGetAllOptions(cpdb_printer_obj_t *printer_obj);
  * Get all the different capabilities with type information for a printer.
  *
  * @param printer_obj       Printer object
+ * @param locale            BCP47 language tag for human-readable strings,
+ *                          or NULL to use raw option/choice names
  *
  * @return                  Capabilities struct
  */
-cpdb_capabilities_t *cpdbGetAllCapabilities(cpdb_printer_obj_t *printer_obj);
+cpdb_capabilities_t *cpdbGetAllCapabilities(cpdb_printer_obj_t *printer_obj,
+                                            const char *locale);
 
 /**
  * Get a single cpdb_option_t struct corresponding to an option name for a printer.
@@ -954,26 +957,33 @@ void cpdbDeleteOption(cpdb_option_t *);
 ______________________________________ cpdb_capability_t __________________________________________
 
 **/
+typedef enum cpdb_capability_type_e {
+    CPDB_CAP_BOOLEAN,
+    CPDB_CAP_INTEGER,
+    CPDB_CAP_RANGE,
+    CPDB_CAP_ENUM,
+    CPDB_CAP_KEYWORD,
+    CPDB_CAP_RESOLUTION,
+    CPDB_CAP_STRING,
+    CPDB_CAP_UNKNOWN   /* set only by the GetAllOptions fallback path,
+                           never returned by a backend directly */
+} cpdb_capability_type_t;
+
 struct cpdb_capability_s
 {
     char *option_name;
+    char *human_readable_name;
     char *group_name;
-    int type;  /* 0=boolean,1=integer,2=range,3=enum,4=keyword,5=resolution,6=string,7=unknown */
+    char *human_readable_group;
+    cpdb_capability_type_t type;
     char *default_value;
     int num_supported;
     char **supported_values;
-    int range_lower;  /* only valid when type == 2 (range) */
-    int range_upper;  /* only valid when type == 2 (range) */
+    char **human_readable_choices;  /* parallel array, same length
+                                       as supported_values */
+    int range_lower;
+    int range_upper;
 };
-
-#define CPDB_CAP_BOOLEAN   0
-#define CPDB_CAP_INTEGER   1
-#define CPDB_CAP_RANGE     2
-#define CPDB_CAP_ENUM      3
-#define CPDB_CAP_KEYWORD   4
-#define CPDB_CAP_RESOLUTION 5
-#define CPDB_CAP_STRING    6
-#define CPDB_CAP_UNKNOWN   7
 
 /**
  * @param cap              Capability object

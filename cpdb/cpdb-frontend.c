@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #include <gio/gunixfdlist.h>
 
+#define CPDB_FALLBACK_LOCALE "en"
+
 static void                 fetchPrinterListFromBackend     (cpdb_frontend_obj_t *      frontend_obj,
                                                              const char *               backend);
                                              
@@ -1142,6 +1144,73 @@ cpdb_capabilities_t *cpdbGetAllCapabilities(cpdb_printer_obj_t *p,
             num_capabilities, num_media, p->id, p->backend_name);
     cpdb_capabilities_t *caps = cpdbGetNewCapabilities();
     cpdbUnpackCapabilities(num_capabilities, var, num_media, media_var, caps);
+
+    if (strcmp(lang, CPDB_FALLBACK_LOCALE) != 0)
+    {
+        int en_num_caps, en_num_media;
+        GVariant *en_var, *en_media_var;
+        GError *en_error = NULL;
+        print_backend_call_get_all_capabilities_sync(p->backend_proxy,
+                                                     p->id,
+                                                     CPDB_FALLBACK_LOCALE,
+                                                     &en_num_caps,
+                                                     &en_var,
+                                                     &en_num_media,
+                                                     &en_media_var,
+                                                     NULL,
+                                                     &en_error);
+        if (!en_error)
+        {
+            cpdb_capabilities_t *en_caps = cpdbGetNewCapabilities();
+            cpdbUnpackCapabilities(en_num_caps, en_var, en_num_media,
+                                   en_media_var, en_caps);
+
+            GHashTableIter iter;
+            gpointer key, cap_ptr;
+            g_hash_table_iter_init(&iter, caps->table);
+            while (g_hash_table_iter_next(&iter, &key, &cap_ptr))
+            {
+                cpdb_capability_t *cap = (cpdb_capability_t *)cap_ptr;
+                cpdb_capability_t *en_cap = g_hash_table_lookup(en_caps->table, cap->option_name);
+                if (!en_cap)
+                    continue;
+                if (cap->human_readable_name
+                    && strcmp(cap->human_readable_name, cap->option_name) == 0
+                    && en_cap->human_readable_name
+                    && strcmp(en_cap->human_readable_name, cap->option_name) != 0)
+                {
+                    g_free(cap->human_readable_name);
+                    cap->human_readable_name = g_strdup(en_cap->human_readable_name);
+                }
+                if (cap->human_readable_group
+                    && cap->group_name
+                    && strcmp(cap->human_readable_group, cap->group_name) == 0
+                    && en_cap->human_readable_group
+                    && strcmp(en_cap->human_readable_group, cap->group_name) != 0)
+                {
+                    g_free(cap->human_readable_group);
+                    cap->human_readable_group = g_strdup(en_cap->human_readable_group);
+                }
+                for (int j = 0; j < cap->num_supported && j < en_cap->num_supported; j++)
+                {
+                    if (cap->human_readable_choices[j]
+                        && cap->supported_values[j]
+                        && strcmp(cap->human_readable_choices[j], cap->supported_values[j]) == 0
+                        && en_cap->human_readable_choices[j]
+                        && en_cap->supported_values[j]
+                        && strcmp(en_cap->supported_values[j], cap->supported_values[j]) == 0
+                        && strcmp(en_cap->human_readable_choices[j], cap->supported_values[j]) != 0)
+                    {
+                        g_free(cap->human_readable_choices[j]);
+                        cap->human_readable_choices[j] = g_strdup(en_cap->human_readable_choices[j]);
+                    }
+                }
+            }
+            cpdbDeleteCapabilities(en_caps);
+        }
+        if (en_error)
+            g_error_free(en_error);
+    }
     return caps;
 }
 
@@ -1693,6 +1762,31 @@ char *cpdbGetOptionTranslation(cpdb_printer_obj_t *p,
                     p->id, p->backend_name, error->message);
         return NULL;
     }
+
+    if (translation && strcmp(translation, option_name) == 0
+        && strcmp(locale, CPDB_FALLBACK_LOCALE) != 0)
+    {
+        g_free(translation);
+        translation = NULL;
+        GError *retry_error = NULL;
+        char *en = NULL;
+        print_backend_call_get_option_translation_sync(p->backend_proxy,
+                                                       p->id,
+                                                       option_name,
+                                                       CPDB_FALLBACK_LOCALE,
+                                                       &en,
+                                                       NULL,
+                                                       &retry_error);
+        if (!retry_error && en && strcmp(en, option_name) != 0)
+            translation = en;
+        else
+        {
+            if (retry_error)
+                g_error_free(retry_error);
+            g_free(en);
+            translation = g_strdup(option_name);
+        }
+    }
     
     logdebug("Obtained translation=%s; for option=%s;locale=%s;printer=%s#%s;\n",
                 translation, option_name, locale, p->id, p->backend_name);
@@ -1744,6 +1838,32 @@ char *cpdbGetChoiceTranslation(cpdb_printer_obj_t *p,
                     p->id, p->backend_name, error->message);
         return NULL;
     }
+
+    if (translation && strcmp(translation, choice_name) == 0
+        && strcmp(locale, CPDB_FALLBACK_LOCALE) != 0)
+    {
+        g_free(translation);
+        translation = NULL;
+        GError *retry_error = NULL;
+        char *en = NULL;
+        print_backend_call_get_choice_translation_sync(p->backend_proxy,
+                                                       p->id,
+                                                       option_name,
+                                                       choice_name,
+                                                       CPDB_FALLBACK_LOCALE,
+                                                       &en,
+                                                       NULL,
+                                                       &retry_error);
+        if (!retry_error && en && strcmp(en, choice_name) != 0)
+            translation = en;
+        else
+        {
+            if (retry_error)
+                g_error_free(retry_error);
+            g_free(en);
+            translation = g_strdup(choice_name);
+        }
+    }
     
     logdebug("Obtained translation=%s; for option=%s;choice=%s;locale=%s;printer=%s#%s;\n",
                 translation, option_name, choice_name, locale, 
@@ -1793,6 +1913,31 @@ char *cpdbGetGroupTranslation(cpdb_printer_obj_t *p,
                     p->id, p->backend_name, error->message);
         return NULL;
     }
+
+    if (translation && strcmp(translation, group_name) == 0
+        && strcmp(locale, CPDB_FALLBACK_LOCALE) != 0)
+    {
+        g_free(translation);
+        translation = NULL;
+        GError *retry_error = NULL;
+        char *en = NULL;
+        print_backend_call_get_group_translation_sync(p->backend_proxy,
+                                                      p->id,
+                                                      group_name,
+                                                      CPDB_FALLBACK_LOCALE,
+                                                      &en,
+                                                      NULL,
+                                                      &retry_error);
+        if (!retry_error && en && strcmp(en, group_name) != 0)
+            translation = en;
+        else
+        {
+            if (retry_error)
+                g_error_free(retry_error);
+            g_free(en);
+            translation = g_strdup(group_name);
+        }
+    }
     
     logdebug("Obtained translation=%s; for group=%s;locale=%s;printer=%s#%s;\n",
                 translation, group_name, locale, p->id, p->backend_name);
@@ -1831,6 +1976,43 @@ void cpdbGetAllTranslations(cpdb_printer_obj_t *p,
     cpdbDeleteTranslations(p);
     p->locale = g_strdup(locale);
     p->translations = cpdbUnpackTranslations(translations);
+
+    if (strcmp(locale, CPDB_FALLBACK_LOCALE) != 0)
+    {
+        GError *en_error = NULL;
+        GVariant *en_variant = NULL;
+        print_backend_call_get_all_translations_sync(p->backend_proxy,
+                                                     p->id,
+                                                     CPDB_FALLBACK_LOCALE,
+                                                     &en_variant,
+                                                     NULL,
+                                                     &en_error);
+        if (!en_error && en_variant)
+        {
+            GHashTable *en_table = cpdbUnpackTranslations(en_variant);
+            GHashTableIter iter;
+            gpointer key, value;
+            g_hash_table_iter_init(&iter, p->translations);
+            while (g_hash_table_iter_next(&iter, &key, &value))
+            {
+                const char *ks = (const char *)key;
+                const char *vs = (const char *)value;
+                const char *raw = strrchr(ks, '#');
+                if (!raw || raw[1] == '\0')
+                    continue;
+                raw++;
+                if (strcmp(vs, raw) != 0)
+                    continue;
+                const char *en_val = g_hash_table_lookup(en_table, ks);
+                if (en_val && strcmp(en_val, raw) != 0)
+                    g_hash_table_insert(p->translations,
+                                        g_strdup(ks), g_strdup(en_val));
+            }
+            g_hash_table_destroy(en_table);
+        }
+        if (en_error)
+            g_error_free(en_error);
+    }
 }
 
 //To be used with cpdbGetAllTranslations only

@@ -1206,6 +1206,25 @@ cpdb_capabilities_t *cpdbGetAllCapabilities(cpdb_printer_obj_t *p,
                     }
                 }
             }
+
+            GHashTableIter media_iter;
+            gpointer media_key, media_ptr;
+            g_hash_table_iter_init(&media_iter, caps->media);
+            while (g_hash_table_iter_next(&media_iter, &media_key, &media_ptr))
+            {
+                cpdb_capability_media_t *m = (cpdb_capability_media_t *)media_ptr;
+                cpdb_capability_media_t *en_m = g_hash_table_lookup(en_caps->media, m->name);
+                if (!en_m)
+                    continue;
+                if (m->human_readable_name
+                    && strcmp(m->human_readable_name, m->name) == 0
+                    && en_m->human_readable_name
+                    && strcmp(en_m->human_readable_name, m->name) != 0)
+                {
+                    g_free(m->human_readable_name);
+                    m->human_readable_name = g_strdup(en_m->human_readable_name);
+                }
+            }
             cpdbDeleteCapabilities(en_caps);
         }
         if (en_error)
@@ -2509,9 +2528,9 @@ cpdb_capabilities_t *cpdbGetNewCapabilities()
                                      (GDestroyNotify) cpdbDeleteCapability);
     c->media_count = 0;
     c->media = g_hash_table_new_full(g_str_hash,
-                                     g_str_equal,
-                                     g_free,
-                                     (GDestroyNotify) cpdbDeleteMedia);
+                                      g_str_equal,
+                                      g_free,
+                                      (GDestroyNotify) cpdbDeleteCapabilityMedia);
     return c;
 }
 
@@ -2596,6 +2615,21 @@ void cpdbDeleteMedia(cpdb_media_t *media)
     free(media);
 }
 
+void cpdbDeleteCapabilityMedia(cpdb_capability_media_t *media)
+{
+    if (media == NULL)
+        return;
+
+    if (media->name)
+        free(media->name);
+    if (media->human_readable_name)
+        free(media->human_readable_name);
+    if (media->margins)
+        free(media->margins);
+
+    free(media);
+}
+
 /**************cpdb_option_t -> cpdb_capability_t conversion********************/
 
 static cpdb_capabilities_t *options_to_capabilities(cpdb_options_t *opts)
@@ -2636,8 +2670,9 @@ static cpdb_capabilities_t *options_to_capabilities(cpdb_options_t *opts)
     while (g_hash_table_iter_next(&iter, &key, &value))
     {
         cpdb_media_t *m = (cpdb_media_t *)value;
-        cpdb_media_t *cm = g_new0(cpdb_media_t, 1);
+        cpdb_capability_media_t *cm = g_new0(cpdb_capability_media_t, 1);
         cm->name = g_strdup(m->name);
+        cm->human_readable_name = g_strdup(m->name);
         cm->width = m->width;
         cm->length = m->length;
         cm->num_margins = m->num_margins;
@@ -2768,15 +2803,16 @@ void cpdbUnpackCapabilities(int num_capabilities,
                            cpdb_capabilities_t *capabilities)
 {
     cpdb_capability_t *cap;
-    cpdb_media_t *media;
+    cpdb_capability_media_t *media;
     int i, j, num, width, length, l, r, t, b, type, range_lower, range_upper;
     GVariantIter *iter, *sub_iter;
     char *str, *name, *human_name, *group, *human_group, *def, *choice_label;
+    char *media_human_name;
 
     capabilities->count = num_capabilities;
-    g_variant_get(caps_var, "a(sssisia(ss)ii)", &iter);
+    g_variant_get(caps_var, "a(ssssisia(ss)ii)", &iter);
     i = 0;
-    while (g_variant_iter_loop(iter, "(sssisia(ss)ii)",
+    while (g_variant_iter_loop(iter, "(ssssisia(ss)ii)",
                                &name, &human_name, &group, &human_group,
                                &type, &def, &num, &sub_iter,
                                &range_lower, &range_upper))
@@ -2837,22 +2873,25 @@ void cpdbUnpackCapabilities(int num_capabilities,
     g_variant_iter_free(iter);
 
     capabilities->media_count = num_media;
-    g_variant_get(media_var, "a(siiia(iiii))", &iter);
+    g_variant_get(media_var, "a(ssiiia(iiii))", &iter);
     i = 0;
-    while (g_variant_iter_loop(iter, "(siiia(iiii))",
-                               &name, &width, &length, &num, &sub_iter))
+    while (g_variant_iter_loop(iter, "(ssiiia(iiii))",
+                               &name, &media_human_name, &width, &length, &num, &sub_iter))
     {
         if (i >= num_media)
         {
             logwarn("array of media contains more than expected amount");
             g_free(name);
+            g_free(media_human_name);
             g_variant_iter_free(sub_iter);
             break;
         }
 
-        media = g_new0(cpdb_media_t, 1);
+        media = g_new0(cpdb_capability_media_t, 1);
         logdebug("name=%s;\n", name);
         media->name = g_strdup(name);
+        logdebug("human_name=%s;\n", media_human_name);
+        media->human_readable_name = g_strdup(media_human_name);
         logdebug("width=%d;\n", width);
         media->width = width;
         logdebug("length=%d;\n", length);

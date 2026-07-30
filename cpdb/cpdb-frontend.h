@@ -39,6 +39,7 @@ typedef struct cpdb_capabilities_s cpdb_capabilities_t;
 typedef struct cpdb_capability_s cpdb_capability_t;
 typedef struct cpdb_margin_s cpdb_margin_t;
 typedef struct cpdb_media_s cpdb_media_t;
+typedef struct cpdb_capability_media_s cpdb_capability_media_t;
 
 typedef enum cpdb_printer_update_e {
     CPDB_CHANGE_PRINTER_ADDED,
@@ -895,7 +896,7 @@ struct cpdb_capabilities_s
     int count;
     int media_count;
     GHashTable *table; /**[name] --> cpdb_capability_t struct**/
-    GHashTable *media; /**[name] --> cpdb_media_t struct**/
+    GHashTable *media; /**[name] --> cpdb_capability_media_t struct**/
 };
 
 /**
@@ -1026,6 +1027,28 @@ struct cpdb_media_s
  * @param media             Media-size object
  */
 void cpdbDeleteMedia(cpdb_media_t *media);
+
+/************************************************************************************************/
+/**
+______________________________________ cpdb_capability_media_t __________________________________________
+**/
+
+struct cpdb_capability_media_s
+{
+    char *name;
+    char *human_readable_name;
+    int width;
+    int length;
+    int num_margins;
+    cpdb_margin_t *margins;
+};
+
+/**
+ * Free up a capability media-size object.
+ *
+ * @param media             Capability media-size object
+ */
+void cpdbDeleteCapabilityMedia(cpdb_capability_media_t *media);
 
 #ifdef __cplusplus
 }

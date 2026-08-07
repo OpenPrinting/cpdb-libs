@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #include <gio/gunixfdlist.h>
 
+#define CPDB_FALLBACK_LOCALE "en"
+
 static void                 fetchPrinterListFromBackend     (cpdb_frontend_obj_t *      frontend_obj,
                                                              const char *               backend);
                                              
@@ -20,10 +22,17 @@ static void                 cpdbUnpackOptions               (int                
                                                              int                        num_media,
                                                              GVariant *                 media_var,
                                                              cpdb_options_t *           options);
+
+static void                 cpdbUnpackCapabilities         (int                        num_capabilities,
+                                                             GVariant *                 var,
+                                                             int                        num_media,
+                                                             GVariant *                 media_var,
+                                                             cpdb_capabilities_t *      capabilities);
 static GHashTable *         cpdbUnpackTranslations          (GVariant *                 translations);
 static void                 add_to_hash_table               (gpointer                   key,
-                                                             gpointer                   value, 
-                                                             gpointer                   user_data);
+                                                              gpointer                   value, 
+                                                              gpointer                   user_data);
+static cpdb_capabilities_t *options_to_capabilities         (cpdb_options_t *           opts);
 
 /**
 ________________________________________________ cpdb_frontend_obj_t __________________________________________
@@ -1086,6 +1095,144 @@ cpdb_options_t *cpdbGetAllOptions(cpdb_printer_obj_t *p)
     return p->options;
 }
 
+cpdb_capabilities_t *cpdbGetAllCapabilities(cpdb_printer_obj_t *p,
+                                            const char *locale)
+{
+    if (p == NULL)
+    {
+        logwarn("Invalid params: cpdbGetAllCapabilities()\n");
+        return NULL;
+    }
+
+    const char *lang = locale ? locale : "";
+    GError *error = NULL;
+    int num_capabilities, num_media;
+    GVariant *var, *media_var;
+    print_backend_call_get_all_capabilities_sync(p->backend_proxy,
+                                                 p->id,
+                                                 lang,
+                                                 &num_capabilities,
+                                                 &var,
+                                                 &num_media,
+                                                 &media_var,
+                                                 NULL,
+                                                 &error);
+    if (error)
+    {
+        if (g_error_matches(error, G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_METHOD))
+        {
+            loginfo("cpdbGetAllCapabilities: backend %s does not support GetAllCapabilities "
+                    "(%s) — falling back to GetAllOptions\n",
+                    p->backend_name, error->message);
+            g_error_free(error);
+            cpdb_options_t *opts = cpdbGetAllOptions(p);
+            if (!opts)
+            {
+                logerror("cpdbGetAllCapabilities: fallback GetAllOptions also failed for %s %s\n",
+                         p->id, p->backend_name);
+                return NULL;
+            }
+            return options_to_capabilities(opts);
+        }
+        logerror("Error getting printer capabilities for %s %s : %s\n",
+                    p->id, p->backend_name, error->message);
+        g_error_free(error);
+        return NULL;
+    }
+
+    loginfo("Obtained %d capabilities and %d media for %s %s\n",
+            num_capabilities, num_media, p->id, p->backend_name);
+    cpdb_capabilities_t *caps = cpdbGetNewCapabilities();
+    cpdbUnpackCapabilities(num_capabilities, var, num_media, media_var, caps);
+
+    if (strcmp(lang, CPDB_FALLBACK_LOCALE) != 0)
+    {
+        int en_num_caps, en_num_media;
+        GVariant *en_var, *en_media_var;
+        GError *en_error = NULL;
+        print_backend_call_get_all_capabilities_sync(p->backend_proxy,
+                                                     p->id,
+                                                     CPDB_FALLBACK_LOCALE,
+                                                     &en_num_caps,
+                                                     &en_var,
+                                                     &en_num_media,
+                                                     &en_media_var,
+                                                     NULL,
+                                                     &en_error);
+        if (!en_error)
+        {
+            cpdb_capabilities_t *en_caps = cpdbGetNewCapabilities();
+            cpdbUnpackCapabilities(en_num_caps, en_var, en_num_media,
+                                   en_media_var, en_caps);
+
+            GHashTableIter iter;
+            gpointer key, cap_ptr;
+            g_hash_table_iter_init(&iter, caps->table);
+            while (g_hash_table_iter_next(&iter, &key, &cap_ptr))
+            {
+                cpdb_capability_t *cap = (cpdb_capability_t *)cap_ptr;
+                cpdb_capability_t *en_cap = g_hash_table_lookup(en_caps->table, cap->option_name);
+                if (!en_cap)
+                    continue;
+                if (cap->human_readable_name
+                    && strcmp(cap->human_readable_name, cap->option_name) == 0
+                    && en_cap->human_readable_name
+                    && strcmp(en_cap->human_readable_name, cap->option_name) != 0)
+                {
+                    g_free(cap->human_readable_name);
+                    cap->human_readable_name = g_strdup(en_cap->human_readable_name);
+                }
+                if (cap->human_readable_group
+                    && cap->group_name
+                    && strcmp(cap->human_readable_group, cap->group_name) == 0
+                    && en_cap->human_readable_group
+                    && strcmp(en_cap->human_readable_group, cap->group_name) != 0)
+                {
+                    g_free(cap->human_readable_group);
+                    cap->human_readable_group = g_strdup(en_cap->human_readable_group);
+                }
+                for (int j = 0; j < cap->num_supported && j < en_cap->num_supported; j++)
+                {
+                    if (cap->human_readable_choices[j]
+                        && cap->supported_values[j]
+                        && strcmp(cap->human_readable_choices[j], cap->supported_values[j]) == 0
+                        && en_cap->human_readable_choices[j]
+                        && en_cap->supported_values[j]
+                        && strcmp(en_cap->supported_values[j], cap->supported_values[j]) == 0
+                        && strcmp(en_cap->human_readable_choices[j], cap->supported_values[j]) != 0)
+                    {
+                        g_free(cap->human_readable_choices[j]);
+                        cap->human_readable_choices[j] = g_strdup(en_cap->human_readable_choices[j]);
+                    }
+                }
+            }
+
+            GHashTableIter media_iter;
+            gpointer media_key, media_ptr;
+            g_hash_table_iter_init(&media_iter, caps->media);
+            while (g_hash_table_iter_next(&media_iter, &media_key, &media_ptr))
+            {
+                cpdb_capability_media_t *m = (cpdb_capability_media_t *)media_ptr;
+                cpdb_capability_media_t *en_m = g_hash_table_lookup(en_caps->media, m->name);
+                if (!en_m)
+                    continue;
+                if (m->human_readable_name
+                    && strcmp(m->human_readable_name, m->name) == 0
+                    && en_m->human_readable_name
+                    && strcmp(en_m->human_readable_name, m->name) != 0)
+                {
+                    g_free(m->human_readable_name);
+                    m->human_readable_name = g_strdup(en_m->human_readable_name);
+                }
+            }
+            cpdbDeleteCapabilities(en_caps);
+        }
+        if (en_error)
+            g_error_free(en_error);
+    }
+    return caps;
+}
+
 cpdb_option_t *cpdbGetOption(cpdb_printer_obj_t *p,
                              const char *name)
 {
@@ -1634,6 +1781,31 @@ char *cpdbGetOptionTranslation(cpdb_printer_obj_t *p,
                     p->id, p->backend_name, error->message);
         return NULL;
     }
+
+    if (translation && strcmp(translation, option_name) == 0
+        && strcmp(locale, CPDB_FALLBACK_LOCALE) != 0)
+    {
+        g_free(translation);
+        translation = NULL;
+        GError *retry_error = NULL;
+        char *en = NULL;
+        print_backend_call_get_option_translation_sync(p->backend_proxy,
+                                                       p->id,
+                                                       option_name,
+                                                       CPDB_FALLBACK_LOCALE,
+                                                       &en,
+                                                       NULL,
+                                                       &retry_error);
+        if (!retry_error && en && strcmp(en, option_name) != 0)
+            translation = en;
+        else
+        {
+            if (retry_error)
+                g_error_free(retry_error);
+            g_free(en);
+            translation = g_strdup(option_name);
+        }
+    }
     
     logdebug("Obtained translation=%s; for option=%s;locale=%s;printer=%s#%s;\n",
                 translation, option_name, locale, p->id, p->backend_name);
@@ -1685,6 +1857,32 @@ char *cpdbGetChoiceTranslation(cpdb_printer_obj_t *p,
                     p->id, p->backend_name, error->message);
         return NULL;
     }
+
+    if (translation && strcmp(translation, choice_name) == 0
+        && strcmp(locale, CPDB_FALLBACK_LOCALE) != 0)
+    {
+        g_free(translation);
+        translation = NULL;
+        GError *retry_error = NULL;
+        char *en = NULL;
+        print_backend_call_get_choice_translation_sync(p->backend_proxy,
+                                                       p->id,
+                                                       option_name,
+                                                       choice_name,
+                                                       CPDB_FALLBACK_LOCALE,
+                                                       &en,
+                                                       NULL,
+                                                       &retry_error);
+        if (!retry_error && en && strcmp(en, choice_name) != 0)
+            translation = en;
+        else
+        {
+            if (retry_error)
+                g_error_free(retry_error);
+            g_free(en);
+            translation = g_strdup(choice_name);
+        }
+    }
     
     logdebug("Obtained translation=%s; for option=%s;choice=%s;locale=%s;printer=%s#%s;\n",
                 translation, option_name, choice_name, locale, 
@@ -1734,6 +1932,31 @@ char *cpdbGetGroupTranslation(cpdb_printer_obj_t *p,
                     p->id, p->backend_name, error->message);
         return NULL;
     }
+
+    if (translation && strcmp(translation, group_name) == 0
+        && strcmp(locale, CPDB_FALLBACK_LOCALE) != 0)
+    {
+        g_free(translation);
+        translation = NULL;
+        GError *retry_error = NULL;
+        char *en = NULL;
+        print_backend_call_get_group_translation_sync(p->backend_proxy,
+                                                      p->id,
+                                                      group_name,
+                                                      CPDB_FALLBACK_LOCALE,
+                                                      &en,
+                                                      NULL,
+                                                      &retry_error);
+        if (!retry_error && en && strcmp(en, group_name) != 0)
+            translation = en;
+        else
+        {
+            if (retry_error)
+                g_error_free(retry_error);
+            g_free(en);
+            translation = g_strdup(group_name);
+        }
+    }
     
     logdebug("Obtained translation=%s; for group=%s;locale=%s;printer=%s#%s;\n",
                 translation, group_name, locale, p->id, p->backend_name);
@@ -1772,6 +1995,43 @@ void cpdbGetAllTranslations(cpdb_printer_obj_t *p,
     cpdbDeleteTranslations(p);
     p->locale = g_strdup(locale);
     p->translations = cpdbUnpackTranslations(translations);
+
+    if (strcmp(locale, CPDB_FALLBACK_LOCALE) != 0)
+    {
+        GError *en_error = NULL;
+        GVariant *en_variant = NULL;
+        print_backend_call_get_all_translations_sync(p->backend_proxy,
+                                                     p->id,
+                                                     CPDB_FALLBACK_LOCALE,
+                                                     &en_variant,
+                                                     NULL,
+                                                     &en_error);
+        if (!en_error && en_variant)
+        {
+            GHashTable *en_table = cpdbUnpackTranslations(en_variant);
+            GHashTableIter iter;
+            gpointer key, value;
+            g_hash_table_iter_init(&iter, p->translations);
+            while (g_hash_table_iter_next(&iter, &key, &value))
+            {
+                const char *ks = (const char *)key;
+                const char *vs = (const char *)value;
+                const char *raw = strrchr(ks, '#');
+                if (!raw || raw[1] == '\0')
+                    continue;
+                raw++;
+                if (strcmp(vs, raw) != 0)
+                    continue;
+                const char *en_val = g_hash_table_lookup(en_table, ks);
+                if (en_val && strcmp(en_val, raw) != 0)
+                    g_hash_table_insert(p->translations,
+                                        g_strdup(ks), g_strdup(en_val));
+            }
+            g_hash_table_destroy(en_table);
+        }
+        if (en_error)
+            g_error_free(en_error);
+    }
 }
 
 //To be used with cpdbGetAllTranslations only
@@ -2257,6 +2517,66 @@ void cpdbDeleteOptions(cpdb_options_t *opts)
     free(opts);
 }
 
+/**************cpdb_capabilities_t************************************/
+cpdb_capabilities_t *cpdbGetNewCapabilities()
+{
+    cpdb_capabilities_t *c = g_new0(cpdb_capabilities_t, 1);
+    c->count = 0;
+    c->table = g_hash_table_new_full(g_str_hash,
+                                     g_str_equal,
+                                     g_free,
+                                     (GDestroyNotify) cpdbDeleteCapability);
+    c->media_count = 0;
+    c->media = g_hash_table_new_full(g_str_hash,
+                                      g_str_equal,
+                                      g_free,
+                                      (GDestroyNotify) cpdbDeleteCapabilityMedia);
+    return c;
+}
+
+void cpdbDeleteCapabilities(cpdb_capabilities_t *caps)
+{
+    if (caps == NULL)
+        return;
+
+    if (caps->table)
+        g_hash_table_destroy(caps->table);
+    if (caps->media)
+        g_hash_table_destroy(caps->media);
+    free(caps);
+}
+
+void cpdbDeleteCapability(cpdb_capability_t *cap)
+{
+    if (cap == NULL)
+        return;
+
+    if (cap->option_name)
+        free(cap->option_name);
+    if (cap->human_readable_name)
+        free(cap->human_readable_name);
+    if (cap->group_name)
+        free(cap->group_name);
+    if (cap->human_readable_group)
+        free(cap->human_readable_group);
+    if (cap->supported_values)
+    {
+        for (int i = 0; i < cap->num_supported; i++)
+            free(cap->supported_values[i]);
+        free(cap->supported_values);
+    }
+    if (cap->human_readable_choices)
+    {
+        for (int i = 0; i < cap->num_supported; i++)
+            free(cap->human_readable_choices[i]);
+        free(cap->human_readable_choices);
+    }
+    if (cap->default_value)
+        free(cap->default_value);
+
+    free(cap);
+}
+
 /**************cpdb_option_t************************************/
 
 void cpdbDeleteOption(cpdb_option_t *opt)
@@ -2293,6 +2613,77 @@ void cpdbDeleteMedia(cpdb_media_t *media)
         free(media->margins);
     
     free(media);
+}
+
+void cpdbDeleteCapabilityMedia(cpdb_capability_media_t *media)
+{
+    if (media == NULL)
+        return;
+
+    if (media->name)
+        free(media->name);
+    if (media->human_readable_name)
+        free(media->human_readable_name);
+    if (media->margins)
+        free(media->margins);
+
+    free(media);
+}
+
+/**************cpdb_option_t -> cpdb_capability_t conversion********************/
+
+static cpdb_capabilities_t *options_to_capabilities(cpdb_options_t *opts)
+{
+    cpdb_capabilities_t *caps = cpdbGetNewCapabilities();
+
+    GHashTableIter iter;
+    gpointer key, value;
+
+    g_hash_table_iter_init(&iter, opts->table);
+    while (g_hash_table_iter_next(&iter, &key, &value))
+    {
+        cpdb_option_t *opt = (cpdb_option_t *)value;
+        cpdb_capability_t *cap = g_new0(cpdb_capability_t, 1);
+        cap->option_name = g_strdup(opt->option_name);
+        /* No locale-aware translation available from the old GetAllOptions
+         * path; echo raw name as best-effort human-readable fallback. */
+        cap->human_readable_name = g_strdup(opt->option_name);
+        cap->group_name = g_strdup(opt->group_name);
+        cap->human_readable_group = g_strdup(opt->group_name);
+        cap->type = CPDB_CAP_UNKNOWN;
+        cap->default_value = g_strdup(opt->default_value);
+        cap->num_supported = opt->num_supported;
+        cap->supported_values = cpdbNewCStringArray(cap->num_supported);
+        cap->human_readable_choices = cpdbNewCStringArray(cap->num_supported);
+        for (int j = 0; j < cap->num_supported; j++)
+        {
+            cap->supported_values[j] = g_strdup(opt->supported_values[j]);
+            cap->human_readable_choices[j] = g_strdup(opt->supported_values[j]);
+        }
+        cap->range_lower = 0;
+        cap->range_upper = 0;
+        g_hash_table_insert(caps->table, g_strdup(cap->option_name), cap);
+        caps->count++;
+    }
+
+    g_hash_table_iter_init(&iter, opts->media);
+    while (g_hash_table_iter_next(&iter, &key, &value))
+    {
+        cpdb_media_t *m = (cpdb_media_t *)value;
+        cpdb_capability_media_t *cm = g_new0(cpdb_capability_media_t, 1);
+        cm->name = g_strdup(m->name);
+        cm->human_readable_name = g_strdup(m->name);
+        cm->width = m->width;
+        cm->length = m->length;
+        cm->num_margins = m->num_margins;
+        cm->margins = g_new0(cpdb_margin_t, cm->num_margins);
+        for (int j = 0; j < cm->num_margins; j++)
+            cm->margins[j] = m->margins[j];
+        g_hash_table_insert(caps->media, g_strdup(cm->name), cm);
+        caps->media_count++;
+    }
+
+    return caps;
 }
 
 /**
@@ -2400,6 +2791,132 @@ void cpdbUnpackOptions(int num_options,
             j++;
         }
         g_hash_table_insert(options->media, g_strdup(media->name), media);
+        i++;
+    }
+    g_variant_iter_free(iter);
+}
+
+void cpdbUnpackCapabilities(int num_capabilities,
+                           GVariant *caps_var,
+                           int num_media,
+                           GVariant *media_var,
+                           cpdb_capabilities_t *capabilities)
+{
+    cpdb_capability_t *cap;
+    cpdb_capability_media_t *media;
+    int i, j, num, width, length, l, r, t, b, type, range_lower, range_upper;
+    GVariantIter *iter, *sub_iter;
+    char *str, *name, *human_name, *group, *human_group, *def, *choice_label;
+    char *media_human_name;
+
+    capabilities->count = num_capabilities;
+    g_variant_get(caps_var, "a(ssssisia(ss)ii)", &iter);
+    i = 0;
+    while (g_variant_iter_loop(iter, "(ssssisia(ss)ii)",
+                               &name, &human_name, &group, &human_group,
+                               &type, &def, &num, &sub_iter,
+                               &range_lower, &range_upper))
+    {
+        if (i >= num_capabilities)
+        {
+            logwarn("array of capabilities contains more than expected amount");
+            g_free(name);
+            g_free(human_name);
+            g_free(group);
+            g_free(human_group);
+            g_free(def);
+            g_variant_iter_free(sub_iter);
+            break;
+        }
+
+        cap = g_new0(cpdb_capability_t, 1);
+        logdebug("name=%s;\n", name);
+        cap->option_name = g_strdup(name);
+        logdebug("human_name=%s;\n", human_name);
+        cap->human_readable_name = g_strdup(human_name);
+        logdebug("group=%s;\n", group);
+        cap->group_name = g_strdup(group);
+        logdebug("human_group=%s;\n", human_group);
+        cap->human_readable_group = g_strdup(human_group);
+        logdebug("type=%d;\n", type);
+        cap->type = type;
+        logdebug("default=%s;\n", def);
+        cap->default_value = g_strdup(def);
+        logdebug("num_choices=%d;\n", num);
+        cap->num_supported = num;
+        logdebug("range_lower=%d; range_upper=%d;\n", range_lower, range_upper);
+        cap->range_lower = range_lower;
+        cap->range_upper = range_upper;
+        logdebug("choices:\n");
+        cap->supported_values = cpdbNewCStringArray(num);
+        cap->human_readable_choices = cpdbNewCStringArray(num);
+
+        j = 0;
+        while (g_variant_iter_loop(sub_iter, "(ss)", &str, &choice_label))
+        {
+            if (j >= num)
+            {
+                logwarn("array of values contains more than expected amount");
+                g_free(str);
+                g_free(choice_label);
+                break;
+            }
+
+            logdebug("  %s / %s;\n", str, choice_label);
+            cap->supported_values[j] = g_strdup(str);
+            cap->human_readable_choices[j] = g_strdup(choice_label);
+            j++;
+        }
+        g_hash_table_insert(capabilities->table, g_strdup(cap->option_name), cap);
+        i++;
+    }
+    g_variant_iter_free(iter);
+
+    capabilities->media_count = num_media;
+    g_variant_get(media_var, "a(ssiiia(iiii))", &iter);
+    i = 0;
+    while (g_variant_iter_loop(iter, "(ssiiia(iiii))",
+                               &name, &media_human_name, &width, &length, &num, &sub_iter))
+    {
+        if (i >= num_media)
+        {
+            logwarn("array of media contains more than expected amount");
+            g_free(name);
+            g_free(media_human_name);
+            g_variant_iter_free(sub_iter);
+            break;
+        }
+
+        media = g_new0(cpdb_capability_media_t, 1);
+        logdebug("name=%s;\n", name);
+        media->name = g_strdup(name);
+        logdebug("human_name=%s;\n", media_human_name);
+        media->human_readable_name = g_strdup(media_human_name);
+        logdebug("width=%d;\n", width);
+        media->width = width;
+        logdebug("length=%d;\n", length);
+        media->length = length;
+        logdebug("num_margins=%d;\n", num);
+        media->num_margins = num;
+        media->margins = g_new0(cpdb_margin_t, num);
+
+        j = 0;
+        while (g_variant_iter_loop(sub_iter, "(iiii)", &l, &r, &t, &b))
+        {
+            if (j >= num)
+            {
+                logwarn("array of margins contains more than expected amount");
+                break;
+            }
+
+            logdebug("    %d,%d,%d,%d;\n", l, r, t, b);
+            media->margins[j].left = l;
+            media->margins[j].right = r;
+            media->margins[j].top = t;
+            media->margins[j].bottom = b;
+            j++;
+        }
+        g_hash_table_insert(capabilities->media, g_strdup(media->name), media);
         i++;
     }
     g_variant_iter_free(iter);

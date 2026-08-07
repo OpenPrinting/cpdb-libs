@@ -72,6 +72,24 @@
             <arg name="media" direction="out" type="a(siiia(iiii))" />
             <!-- media contents: media name, width, length, number of supported margins, array of margins (left, right, top, bottom) -->
         </method>
+        <method name="GetAllCapabilities">
+            <arg name="printer_id" direction="in" type="s" />
+            <arg name="locale" direction="in" type="s" />
+            <arg name="num_capabilities" direction="out" type="i" />
+            <arg name="capabilities" direction="out" type="a(ssssisia(ss)ii)" />
+            <!--capability contents: option name, human-readable name,
+                group name, human-readable group, type
+                (0=boolean,1=integer,2=range,3=enum,4=keyword,5=resolution,
+                6=string,7=unknown), default value, number of supported
+                values, array of (choice value, human-readable choice label)
+                pairs, range lower bound, range upper bound
+                (only meaningful for type=range)-->
+            <arg name="num_media" direction="out" type="i" />
+            <!--media contents: media name, human-readable media name,
+                width, length, number of supported margins, array of margins
+                (left, right, top, bottom)-->
+            <arg name="media" direction="out" type="a(ssiiia(iiii))" />
+        </method>
         <method name="GetAllTranslations">
             <arg name="printer_id" direction="in" type="s" />
             <arg name="locale" direction="in" type="s" />

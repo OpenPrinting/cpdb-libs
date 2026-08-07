@@ -35,8 +35,11 @@ typedef struct cpdb_printer_obj_s cpdb_printer_obj_t;
 typedef struct cpdb_settings_s cpdb_settings_t;
 typedef struct cpdb_options_s cpdb_options_t;
 typedef struct cpdb_option_s cpdb_option_t;
+typedef struct cpdb_capabilities_s cpdb_capabilities_t;
+typedef struct cpdb_capability_s cpdb_capability_t;
 typedef struct cpdb_margin_s cpdb_margin_t;
 typedef struct cpdb_media_s cpdb_media_t;
+typedef struct cpdb_capability_media_s cpdb_capability_media_t;
 
 typedef enum cpdb_printer_update_e {
     CPDB_CHANGE_PRINTER_ADDED,
@@ -443,6 +446,18 @@ char *cpdbGetState(cpdb_printer_obj_t *printer_obj);
  * @return                  Options struct
  */
 cpdb_options_t *cpdbGetAllOptions(cpdb_printer_obj_t *printer_obj);
+
+/**
+ * Get all the different capabilities with type information for a printer.
+ *
+ * @param printer_obj       Printer object
+ * @param locale            BCP47 language tag for human-readable strings,
+ *                          or NULL to use raw option/choice names
+ *
+ * @return                  Capabilities struct
+ */
+cpdb_capabilities_t *cpdbGetAllCapabilities(cpdb_printer_obj_t *printer_obj,
+                                            const char *locale);
 
 /**
  * Get a single cpdb_option_t struct corresponding to an option name for a printer.
@@ -876,6 +891,14 @@ struct cpdb_options_s
     GHashTable *media; /**[name] --> cpdb_media_t struct**/
 };
 
+struct cpdb_capabilities_s
+{
+    int count;
+    int media_count;
+    GHashTable *table; /**[name] --> cpdb_capability_t struct**/
+    GHashTable *media; /**[name] --> cpdb_capability_media_t struct**/
+};
+
 /**
  * Get an empty cpdb_options_t struct with no 'options' in it
  * 
@@ -889,6 +912,26 @@ cpdb_options_t *cpdbGetNewOptions();
  * @param options           Options object
  */
 void cpdbDeleteOptions(cpdb_options_t *);
+
+/************************************************************************************************/
+/**
+______________________________________ cpdb_capabilities_t __________________________________________
+
+**/
+
+/**
+ * Get an empty cpdb_capabilities_t struct with no 'capabilities' in it
+ *
+ * @return                  Capabilities object
+ */
+cpdb_capabilities_t *cpdbGetNewCapabilities();
+
+/**
+ * Free up a capabilities object.
+ *
+ * @param capabilities      Capabilities object
+ */
+void cpdbDeleteCapabilities(cpdb_capabilities_t *);
 
 /************************************************************************************************/
 /**
@@ -908,6 +951,45 @@ struct cpdb_option_s
  * @param opt               Option object
  */
 void cpdbDeleteOption(cpdb_option_t *);
+
+/************************************************************************************************/
+
+/**
+______________________________________ cpdb_capability_t __________________________________________
+
+**/
+typedef enum cpdb_capability_type_e {
+    CPDB_CAP_BOOLEAN,
+    CPDB_CAP_INTEGER,
+    CPDB_CAP_RANGE,
+    CPDB_CAP_ENUM,
+    CPDB_CAP_KEYWORD,
+    CPDB_CAP_RESOLUTION,
+    CPDB_CAP_STRING,
+    CPDB_CAP_UNKNOWN   /* set only by the GetAllOptions fallback path,
+                           never returned by a backend directly */
+} cpdb_capability_type_t;
+
+struct cpdb_capability_s
+{
+    char *option_name;
+    char *human_readable_name;
+    char *group_name;
+    char *human_readable_group;
+    cpdb_capability_type_t type;
+    char *default_value;
+    int num_supported;
+    char **supported_values;
+    char **human_readable_choices;  /* parallel array, same length
+                                       as supported_values */
+    int range_lower;
+    int range_upper;
+};
+
+/**
+ * @param cap              Capability object
+ */
+void cpdbDeleteCapability(cpdb_capability_t *);
 
 /************************************************************************************************/
 
@@ -945,6 +1027,28 @@ struct cpdb_media_s
  * @param media             Media-size object
  */
 void cpdbDeleteMedia(cpdb_media_t *media);
+
+/************************************************************************************************/
+/**
+______________________________________ cpdb_capability_media_t __________________________________________
+**/
+
+struct cpdb_capability_media_s
+{
+    char *name;
+    char *human_readable_name;
+    int width;
+    int length;
+    int num_margins;
+    cpdb_margin_t *margins;
+};
+
+/**
+ * Free up a capability media-size object.
+ *
+ * @param media             Capability media-size object
+ */
+void cpdbDeleteCapabilityMedia(cpdb_capability_media_t *media);
 
 #ifdef __cplusplus
 }

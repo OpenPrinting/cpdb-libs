@@ -1,33 +1,108 @@
-name: Build and Test
+# =============================================================================
+# Multi-Architecture Build & Test Workflow for cpdb-libs
+#
+# Matrix: 4 architectures.
+#   amd64, arm64 (native runners); armhf, riscv64 (QEMU)
+#
+# cpdb-libs is the CUPS-independent D-Bus IPC layer, so there is no CUPS
+# matrix here - only the four architectures.  All per-leg work lives in
+# ci/ci-setup.sh so the legs differ only in whether they run under emulation.
+# =============================================================================
+name: Build and Test (cpdb-libs, Multi-Architecture)
 
 on:
   push:
     branches:
-    - '**'
+      - '**'
   pull_request:
     branches:
-    - '**'
+      - '**'
   workflow_dispatch:
-    
-jobs:
-  build-linux-run-tests:
 
-    runs-on: ubuntu-latest
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-matrix:
+    name: Build & Test (${{ matrix.arch }})
+    runs-on: ${{ matrix.runs-on }}
+    # Emulated legs are slow; give them plenty of headroom.
+    timeout-minutes: 120
+
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64, armhf, riscv64]
+        include:
+          - arch: amd64
+            runs-on: ubuntu-latest
+            use-qemu: false
+          - arch: arm64
+            runs-on: ubuntu-24.04-arm
+            use-qemu: false
+          - arch: armhf
+            runs-on: ubuntu-latest
+            use-qemu: true
+            qemu-arch: armv7
+          - arch: riscv64
+            runs-on: ubuntu-latest
+            use-qemu: true
+            qemu-arch: riscv64
 
     steps:
-    - uses: actions/checkout@v6
-    - name: show Ubuntu version
-      run: cat /etc/os-release | grep PRETTY_NAME | awk -F '=' '{print $2}'
-    - name: update build environment
-      run: sudo apt-get update --fix-missing -y
-    - name: install prerequisites
-      run: |
-       sudo apt-get install -y autoconf autopoint libglib2.0-dev libdbus-1-dev libtool 
-    - name: configure 
-      env:
-        CC: /usr/bin/gcc
-      run: ./autogen.sh && ./configure
-    - name: make
-      run: make
-    - name: Run Tests
-      run: make check || cat test/error_log*
+      - uses: actions/checkout@v4
+
+      # ==========================================
+      # NATIVE EXECUTION (amd64 and arm64)
+      # ==========================================
+      - name: Build & Test (Native)
+        if: matrix.use-qemu == false
+        run: |
+          set -ex
+          sh ci/ci-setup.sh deps
+          sh ci/ci-setup.sh build
+
+      - name: Upload test artifacts (Native)
+        if: matrix.use-qemu == false && always()
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpdb-libs-logs-${{ matrix.arch }}
+          path: |
+            config.log
+            test-suite.log
+            tools/*.log
+          if-no-files-found: ignore
+
+      # ==========================================
+      # EMULATED EXECUTION (armhf and riscv64)
+      # ==========================================
+      - name: Build & Test (Emulated)
+        if: matrix.use-qemu == true
+        uses: uraimo/run-on-arch-action@v3
+        with:
+          arch: ${{ matrix.qemu-arch }}
+          distro: ubuntu24.04
+          githubToken: ${{ github.token }}
+          install: |
+            apt-get update --fix-missing -y
+            DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata ca-certificates git
+          run: |
+            set -ex
+            sh ci/ci-setup.sh deps
+            sh ci/ci-setup.sh build
+
+      - name: Upload test artifacts (Emulated)
+        if: matrix.use-qemu == true && always()
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpdb-libs-logs-${{ matrix.arch }}
+          path: |
+            config.log
+            test-suite.log
+            tools/*.log
+          if-no-files-found: ignore

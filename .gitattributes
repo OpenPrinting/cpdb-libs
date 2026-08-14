@@ -1,0 +1,4 @@
+# Shell scripts must keep LF endings so they run on Linux CI runners even
+# when the tree is checked out or edited on Windows.
+*.sh text eol=lf
+ci/ci-setup.sh text eol=lf

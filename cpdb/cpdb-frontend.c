@@ -1320,6 +1320,7 @@ char *cpdbPrintFileWithJobTitle(cpdb_printer_obj_t *p,
         logerror("Error connecting to backend for printing file %s on %s %s: %s\n",
                  file_path, p->id, p->backend_name, strerror(errno));
         g_free(socket_path);
+        fclose(file);
         return NULL;
     }
 
@@ -1602,6 +1603,8 @@ void cpdbPicklePrinterToFile(cpdb_printer_obj_t *p,
     {
         logerror("Error pickling printer %s %s: Couldn't get unique bus name\n",
                     p->id, p->backend_name);
+        fclose(fp);
+        free(path);
         return;
     }
     

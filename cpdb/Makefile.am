@@ -34,7 +34,7 @@ libcpdb_frontend_la_LIBADD += $(GLIB_LIBS)
 libcpdb_frontend_la_LIBADD += $(GIO_LIBS)
 libcpdb_frontend_la_LIBADD += $(GIOUNIX_LIBS)
 
-libcpdb_frontend_la_LDFLAGS = -no-undefined -version-info 3
+libcpdb_frontend_la_LDFLAGS = -no-undefined -version-info 4:0:1
 
 
 cpdb_headersdir = $(includedir)/cpdb

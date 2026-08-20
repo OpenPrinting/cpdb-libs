@@ -53,6 +53,32 @@ typedef enum {
 } CpdbDebugLevel;
 
 /**
+ * Quality of a human-readable translation obtained for an option,
+ * choice, or group name.
+ *
+ * The tiers form a ladder used by the frontend-side translation
+ * functions, from the most preferred down to no translation at all:
+ *
+ *   CPDB_TR_EXACT       translation in the requested locale (xx or xx_ZZ)
+ *   CPDB_TR_LANG        translation in the base language;
+ *                       "xx_ZZ" is collapsed to its base language "xx",
+ *                       so a region-specific locale without its own
+ *                       coverage falls back to the base-language string
+ *   CPDB_TR_FALLBACK_EN English translation
+ *   CPDB_TR_NONE        no translation available
+ *
+ * Note that CPDB_TR_LANG merges "xx" and "xx_ZZ": requesting a
+ * region-specific locale without region-specific coverage yields the
+ * base-language string.
+ */
+typedef enum cpdb_translation_quality_e {
+    CPDB_TR_NONE = 0,
+    CPDB_TR_FALLBACK_EN,
+    CPDB_TR_LANG,
+    CPDB_TR_EXACT
+} cpdb_translation_quality_t;
+
+/**
  * Get CPDB version
  */
 const char *cpdbGetVersion();

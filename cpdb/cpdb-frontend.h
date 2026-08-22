@@ -734,6 +734,59 @@ char *cpdbGetGroupTranslation(cpdb_printer_obj_t *printer_obj, const char *group
 
 
 /**
+ * Get the translation for an option name provided by a printer, following
+ * the translation-quality ladder: exact locale, then base language (skipped
+ * when the locale has no region), then English, then none.
+ *
+ * @param printer_obj       Printer object
+ * @param option_name       Option name
+ * @param lang              BCP47 language tag to be used for translation
+ * @param quality           Where to store the quality tier of the
+ *                          returned translation (may be NULL)
+ *
+ * @return                  Translated name (or the raw option name with
+ *                          quality CPDB_TR_NONE when no translation is
+ *                          available)
+ */
+char *cpdbGetOptionTranslationWithQuality(cpdb_printer_obj_t *printer_obj, const char *option_name, const char *lang, cpdb_translation_quality_t *quality);
+
+/**
+ * Get the translation for an option value provided by a printer, following
+ * the translation-quality ladder: exact locale, then base language (skipped
+ * when the locale has no region), then English, then none.
+ *
+ * @param printer_obj       Printer object
+ * @param option_name       Option name
+ * @param choice_name       Option value
+ * @param lang              BCP47 language tag to be used for translation
+ * @param quality           Where to store the quality tier of the
+ *                          returned translation (may be NULL)
+ *
+ * @return                  Translated value (or the raw choice name with
+ *                          quality CPDB_TR_NONE when no translation is
+ *                          available)
+ */
+char *cpdbGetChoiceTranslationWithQuality(cpdb_printer_obj_t *printer_obj, const char *option_name, const char *choice_name, const char *lang, cpdb_translation_quality_t *quality);
+
+/**
+ * Get the translation for an option group provided by a printer, following
+ * the translation-quality ladder: exact locale, then base language (skipped
+ * when the locale has no region), then English, then none.
+ *
+ * @param printer_obj       Printer object
+ * @param group_name        Group name
+ * @param lang              BCP47 language tag to be used for translation
+ * @param quality           Where to store the quality tier of the
+ *                          returned translation (may be NULL)
+ *
+ * @return                  Translated name (or the raw group name with
+ *                          quality CPDB_TR_NONE when no translation is
+ *                          available)
+ */
+char *cpdbGetGroupTranslationWithQuality(cpdb_printer_obj_t *printer_obj, const char *group_name, const char *lang, cpdb_translation_quality_t *quality);
+
+
+/**
  * Get translations for all strings provided by a printer.
  *
  * @param printer_obj       Printer object
@@ -984,6 +1037,11 @@ struct cpdb_capability_s
                                        as supported_values */
     int range_lower;
     int range_upper;
+    cpdb_translation_quality_t name_quality;     /* quality of human_readable_name */
+    cpdb_translation_quality_t group_quality;    /* quality of human_readable_group */
+    cpdb_translation_quality_t *choice_qualities; /* quality of each human_readable_choices
+                                                     entry, parallel array, same length
+                                                     as num_supported */
 };
 
 /**

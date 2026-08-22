@@ -1446,6 +1446,7 @@ char *cpdbPrintFileWithJobTitle(cpdb_printer_obj_t *p,
         logerror("Error connecting to backend for printing file %s on %s %s: %s\n",
                  file_path, p->id, p->backend_name, strerror(errno));
         g_free(socket_path);
+        fclose(file);
         return NULL;
     }
 
@@ -1728,6 +1729,7 @@ void cpdbPicklePrinterToFile(cpdb_printer_obj_t *p,
     {
         logerror("Error pickling printer %s %s: Couldn't get unique bus name\n",
                     p->id, p->backend_name);
+        fclose(fp);
         return;
     }
     
@@ -1869,9 +1871,11 @@ failed:
 
 static char *cpdbLangBase(const char *locale)
 {
-    const char *sep = strchr(locale, '_');
+    if (locale == NULL || *locale == '\0')
+        return NULL;
 
-    if (locale == NULL || *locale == '\0' || sep == NULL || sep == locale)
+    const char *sep = strchr(locale, '_');
+    if (sep == NULL || sep == locale)
         return NULL;
 
     return g_strndup(locale, sep - locale);

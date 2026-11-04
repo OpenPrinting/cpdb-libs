@@ -1702,6 +1702,7 @@ void cpdbPicklePrinterToFile(cpdb_printer_obj_t *p,
 {
 	FILE *fp;
 	char *path;
+    int fd;
     const char *unique_bus_name;
     GHashTableIter iter;
     gpointer key, value;
@@ -1717,10 +1718,13 @@ void cpdbPicklePrinterToFile(cpdb_printer_obj_t *p,
     loginfo("Keeping backend %s alive\n", p->backend_name);
     
     path = cpdbGetAbsolutePath(filename);
-    if ((fp = fopen(path, "w")) == NULL)
+    if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW, 0600)) < 0 ||
+        (fp = fdopen(fd, "w")) == NULL)
     {
         logerror("Error pickling printer %s %s : Couldn't open %s for writing\n",
                     p->id, p->backend_name, path);
+        if (fd >= 0)
+            close(fd);
         return;
     }
 

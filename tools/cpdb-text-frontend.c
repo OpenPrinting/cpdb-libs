@@ -433,7 +433,7 @@ gpointer control_thread(gpointer user_data)
                 puts(MESSAGE_PRINTER_NOT_FOUND);
                 continue;
             }
-            cpdbPicklePrinterToFile(p, "/tmp/.printer-pickle", f);
+            cpdbPicklePrinterToFile(p, "~/.printer-pickle", f);
         }
         else if (strcmp(buf, "get-option-translation") == 0)
         {

@@ -48,6 +48,11 @@ else
     exit 1
 fi
 
+if ! dbus-run-session -- ./test-printer-signals >> $LOG 2>&1; then
+    echo "FAIL: Printer signals test failed!"
+    exit 1
+fi
+
 echo "SUCCESS!"
 
 exit 0

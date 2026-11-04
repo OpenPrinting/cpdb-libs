@@ -43,6 +43,7 @@ cpdb/.deps
 cpdb/.libs
 tools/cpdb-text-frontend
 tools/cpdb-pickle-print
+tools/test-printer-signals
 tools/gmon.out
 tools/*.o
 tools/.deps

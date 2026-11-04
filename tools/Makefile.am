@@ -28,6 +28,12 @@ cpdb_pickle_print_CFLAGS = \
 # Tests ("make test"/"make check")
 # ================================
 
+check_PROGRAMS = test-printer-signals
+
+test_printer_signals_SOURCES = test-printer-signals.c
+test_printer_signals_LDADD = $(cpdb_text_frontend_LDADD) $(GIO_LIBS)
+test_printer_signals_CFLAGS = -I .. $(GLIB_CFLAGS) $(GIO_CFLAGS)
+
 TESTS = \
         run-tests.sh
 

@@ -175,6 +175,8 @@ void cpdbOnPrinterRemoved(GDBusConnection *connection,
     
     g_variant_get(parameters, "(ss)", &printer_id, &backend_name);
     cpdb_printer_obj_t *p = cpdbRemovePrinter(f, printer_id, backend_name);
+    if (p == NULL)
+        return;
     f->printer_cb(f, p, CPDB_CHANGE_PRINTER_REMOVED);
     cpdbDeletePrinterObj(p);
 }
@@ -194,6 +196,8 @@ void cpdbOnPrinterStateChanged(GDBusConnection *connection,
     g_variant_get(parameters, "(ssbs)", &printer_id, &printer_state,
                     &printer_is_accepting_jobs, &backend_name);
     cpdb_printer_obj_t *p = cpdbFindPrinterObj(f, printer_id, backend_name);
+    if (p == NULL)
+        return;
     if (p->state)
         free(p->state);
     p->state = g_strdup(printer_state);
@@ -402,7 +406,11 @@ bool cpdbRefreshPrinterList(cpdb_frontend_obj_t *f, const char *backend)
                 }
                 cpdbDeletePrinterObj(temp);
             }
-            if(printer_exists == 0) cpdbRemovePrinter(f, printer_obj->id, backend_name);
+            if (printer_exists == 0)
+            {
+                g_hash_table_iter_remove(&iterator);
+                f->num_printers--;
+            }
         }
     }
     return true;
@@ -600,14 +608,14 @@ cpdb_printer_obj_t *cpdbRemovePrinter(cpdb_frontend_obj_t *f,
                                       const char *backend_name)
 {
     char *key;
+    gpointer stored_key;
     cpdb_printer_obj_t *p = NULL;
 
     loginfo("Removing printer %s %s\n", printer_id, backend_name);
     key = cpdbConcatSep(printer_id, backend_name);
-    if (g_hash_table_contains(f->printer, key))
+    if (g_hash_table_steal_extended(f->printer, key, &stored_key, (gpointer *)&p))
     {
-        p = cpdbFindPrinterObj(f, printer_id, backend_name);
-        g_hash_table_remove(f->printer, key);
+        free(stored_key);
         f->num_printers--;
     }
     else

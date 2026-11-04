@@ -48,6 +48,11 @@ else
     exit 1
 fi
 
+if ! dbus-run-session -- ./test-capability-counts >> $LOG 2>&1; then
+    echo "FAIL: Capability counts test failed!"
+    exit 1
+fi
+
 echo "SUCCESS!"
 
 exit 0

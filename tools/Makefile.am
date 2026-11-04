@@ -28,6 +28,12 @@ cpdb_pickle_print_CFLAGS = \
 # Tests ("make test"/"make check")
 # ================================
 
+check_PROGRAMS = test-capability-counts
+
+test_capability_counts_SOURCES = test-capability-counts.c
+test_capability_counts_LDADD = $(cpdb_text_frontend_LDADD) $(GIO_LIBS)
+test_capability_counts_CFLAGS = -I .. $(GLIB_CFLAGS) $(GIO_CFLAGS)
+
 TESTS = \
         run-tests.sh
 

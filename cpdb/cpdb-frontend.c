@@ -2951,6 +2951,7 @@ void cpdbUnpackOptions(int num_options,
         opt->group_name = g_strdup(group);
         logdebug("default=%s;\n", def);
         opt->default_value = g_strdup(def);
+        num = CLAMP(num, 0, (int)g_variant_iter_n_children(sub_iter));
         logdebug("num_choices=%d;\n", num);
         opt->num_supported = num;
         logdebug("choices:\n");
@@ -2996,6 +2997,7 @@ void cpdbUnpackOptions(int num_options,
         media->width = width;
         logdebug("length=%d;\n", length);
         media->length = length;
+        num = CLAMP(num, 0, (int)g_variant_iter_n_children(sub_iter));
         logdebug("num_margins=%d;\n", num);
         media->num_margins = num;
         media->margins = g_new0(cpdb_margin_t, num);
@@ -3068,6 +3070,7 @@ void cpdbUnpackCapabilities(int num_capabilities,
         cap->type = type;
         logdebug("default=%s;\n", def);
         cap->default_value = g_strdup(def);
+        num = CLAMP(num, 0, (int)g_variant_iter_n_children(sub_iter));
         logdebug("num_choices=%d;\n", num);
         cap->num_supported = num;
         logdebug("range_lower=%d; range_upper=%d;\n", range_lower, range_upper);
@@ -3123,6 +3126,7 @@ void cpdbUnpackCapabilities(int num_capabilities,
         media->width = width;
         logdebug("length=%d;\n", length);
         media->length = length;
+        num = CLAMP(num, 0, (int)g_variant_iter_n_children(sub_iter));
         logdebug("num_margins=%d;\n", num);
         media->num_margins = num;
         media->margins = g_new0(cpdb_margin_t, num);

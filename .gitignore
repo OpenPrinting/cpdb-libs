@@ -44,6 +44,7 @@ cpdb/.libs
 tools/cpdb-text-frontend
 tools/cpdb-pickle-print
 tools/test-printer-signals
+tools/test-capability-counts
 tools/gmon.out
 tools/*.o
 tools/.deps

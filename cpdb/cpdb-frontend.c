@@ -1809,6 +1809,7 @@ cpdb_printer_obj_t *cpdbResurrectPrinterFromFile(const char *filename)
     p->backend_proxy = cpdbCreateBackend(connection,
                                          service_name);
     free(service_name);
+    service_name = NULL;
     print_backend_call_replace_sync(p->backend_proxy, 
                                     previous_parent_dialog, 
                                     NULL, 

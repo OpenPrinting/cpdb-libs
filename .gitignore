@@ -16,8 +16,10 @@ m4/*
 !m4/cpdb*
 ABOUT-NLS
 po/*
-!po/POTFILE.in
+!po/POTFILES.in
 !po/Makevars
+!po/LINGUAS
+!po/sv.po
 config.*
 configure
 libtool

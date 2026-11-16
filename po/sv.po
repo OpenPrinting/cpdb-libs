@@ -1,0 +1,330 @@
+# Swedish translations for cpdb-libs.
+# Copyright (C) 2026 OpenPrinting
+# This file is distributed under the same license as the cpdb-libs package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: cpdb-libs\n"
+"Report-Msgid-Bugs-To: https://github.com/OpenPrinting/cpdb-libs/issues\n"
+"POT-Creation-Date: 2026-10-05 14:23+0200\n"
+"PO-Revision-Date: 2026-10-05 14:23+0200\n"
+"Last-Translator: \n"
+"Language-Team: Swedish\n"
+"Language: sv\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:158
+msgid "Media"
+msgstr "Media"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:159
+msgid "Copies"
+msgstr "Kopior"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:160
+msgid "Color"
+msgstr "Färg"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:161
+msgid "Scaling"
+msgstr "Skalning"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:162
+msgid "Ouput Quality"
+msgstr "Utskriftskvalitet"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:163
+msgid "Advanced"
+msgstr "Avancerat"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:164
+msgid "Job Management"
+msgstr "Jobbhantering"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:165
+msgid "Page Management"
+msgstr "Sidhantering"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:166
+msgid "Finishings"
+msgstr "Efterbehandling"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:175
+msgid "copies"
+msgstr "Exemplar"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:176
+msgid "multiple-document-handling"
+msgstr "Hantering av flera dokument"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:177
+msgid "multiple-document-jobs-supported"
+msgstr "Jobb med flera dokument stöds"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:179
+msgid "media"
+msgstr "Media"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:180
+msgid "media-col"
+msgstr "Mediesamling"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:181
+msgid "media-type"
+msgstr "Medietyp"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:182
+msgid "media-source"
+msgstr "Mediakälla"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:183
+msgid "media-top-margin"
+msgstr "Övre mediemarginal"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:184
+msgid "media-bottom-margin"
+msgstr "Nedre mediemarginal"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:185
+msgid "media-left-margin"
+msgstr "Vänster mediemarginal"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:186
+msgid "media-right-margin"
+msgstr "Höger mediemarginal"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:188
+msgid "sides"
+msgstr "Sidor"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:189
+msgid "mirror"
+msgstr "Spegelvänd"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:190
+msgid "booklet"
+msgstr "Häfte"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:191
+msgid "page-set"
+msgstr "Sidurval"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:192
+msgid "number-up"
+msgstr "Sidor per ark"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:193
+msgid "number-up-layout"
+msgstr "Sidlayout per ark"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:194
+msgid "page-border"
+msgstr "Sidkant"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:195
+msgid "page-ranges"
+msgstr "Sidintervall"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:196
+msgid "orientation-requested"
+msgstr "Begärd orientering"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:198
+msgid "position"
+msgstr "Position"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:199
+msgid "ipp-attribute-fidelity"
+msgstr "IPP-attributtrohet"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:200
+msgid "print-scaling"
+msgstr "Utskriftsskalning"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:202
+msgid "print-color-mode"
+msgstr "Utskriftsfärgläge"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:203
+msgid "printer-resolution"
+msgstr "Skrivarupplösning"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:204
+msgid "print-quality"
+msgstr "Utskriftskvalitet"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:206
+msgid "finishings"
+msgstr "Efterbehandling"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:207
+msgid "output-bin"
+msgstr "Utmatningsfack"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:208
+msgid "page-delivery"
+msgstr "Sidleverans"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:210
+msgid "job-name"
+msgstr "Jobbnamn"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:211
+msgid "job-sheets"
+msgstr "Jobbsidor"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:212
+msgid "billing-info"
+msgstr "Faktureringsinformation"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:213
+msgid "job-priority"
+msgstr "Jobbprioritet"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:214
+msgid "job-hold-until"
+msgstr "Vänta med jobb till"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:223
+msgid "all"
+msgstr "Alla"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:224
+msgid "odd"
+msgstr "Udda"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:225
+msgid "even"
+msgstr "Jämna"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:227
+msgid "color"
+msgstr "Färg"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:228
+msgid "monochrome"
+msgstr "Monokrom"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:229
+msgid "auto"
+msgstr "Automatiskt"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:231
+msgid "same-order"
+msgstr "Samma ordning"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:232
+msgid "reverse-order"
+msgstr "Omvänd ordning"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:234
+msgid "separate-documents-collated-copies"
+msgstr "Separata dokument, sorterade kopior"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:235
+msgid "separate-documents-uncollated-copies"
+msgstr "Separata dokument, osorterade kopior"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:237
+msgid "draft"
+msgstr "Utkast"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:238
+msgid "normal"
+msgstr "Normal"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:239
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:254
+msgid "high"
+msgstr "Hög"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:241
+msgid "one-sided"
+msgstr "Ensidigt"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:242
+msgid "two-sided-short-edge"
+msgstr "Dubbelsidigt, kortsidesvändning"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:243
+msgid "two-sided-long-edge"
+msgstr "Dubbelsidigt, långsidesvändning"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:245
+msgid "3"
+msgstr "3"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:246
+msgid "4"
+msgstr "4"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:247
+msgid "5"
+msgstr "5"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:248
+msgid "6"
+msgstr "6"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:250
+msgid "no-hold"
+msgstr "Ingen väntan"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:251
+msgid "indefinite"
+msgstr "Tills vidare"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:253
+msgid "urgent"
+msgstr "Brådskande"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:255
+msgid "medium"
+msgstr "Medel"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:256
+msgid "low"
+msgstr "Låg"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:258
+msgid "idle"
+msgstr "Overksam"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:259
+msgid "printing"
+msgstr "Skriver ut"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:260
+msgid "stopped"
+msgstr "Stoppad"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:272
+msgid "Aborted"
+msgstr "Avbrutet"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:273
+msgid "Cancelled"
+msgstr "Avbrutet"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:274
+msgid "Completed"
+msgstr "Slutfört"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:275
+msgid "Held"
+msgstr "Väntande"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:276
+msgid "Pending"
+msgstr "Väntande"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:277
+msgid "Printing"
+msgstr "Skriver ut"
+
+#: work/openprinting-cpdb-libs/cpdb/cpdb.h:278
+msgid "Stopped"
+msgstr "Stoppad"

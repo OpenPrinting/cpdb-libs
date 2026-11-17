@@ -107,6 +107,11 @@ void cpdbUnpackStringArray(GVariant *variant, int num_val, char ***val)
         return;
     }
     char **array = (char **)malloc(sizeof(char *) * num_val);
+    if (array == NULL)
+    {
+        *val = NULL;
+        return;
+    }
 
     g_variant_get(variant, "a(s)", &iter);
 

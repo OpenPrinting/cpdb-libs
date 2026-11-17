@@ -1433,8 +1433,12 @@ static void cpdbDebugPrintSettings(cpdb_settings_t *s)
 char *cpdbPrintFile(cpdb_printer_obj_t *p,
                     const char *file_path)
 {
-    const char *title = "";
-    return cpdbPrintFileWithJobTitle(p, file_path, title);
+    char *title, *jobid;
+
+    title = g_path_get_basename(file_path);
+    jobid = cpdbPrintFileWithJobTitle(p, file_path, title);
+    g_free(title);
+    return jobid;
 }
 
 char *cpdbPrintFileWithJobTitle(cpdb_printer_obj_t *p,

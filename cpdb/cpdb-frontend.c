@@ -1785,6 +1785,9 @@ cpdb_printer_obj_t *cpdbResurrectPrinterFromFile(const char *filename)
     char *service_name = NULL, *previous_parent_dialog = NULL;
     GError *error = NULL;
     cpdb_printer_obj_t *p;
+    gboolean accepting_jobs;
+    int num_printers;
+    GVariant *printers;
 
     path = cpdbGetAbsolutePath(filename);
     if ((fp = fopen(path, "r")) == NULL)
@@ -1864,6 +1867,34 @@ cpdb_printer_obj_t *cpdbResurrectPrinterFromFile(const char *filename)
         value = strtok(NULL, "#");
         cpdbAddSetting(p->settings, name, value);
     }
+
+    /*
+     * The backend only knows the printers of frontends which asked it for
+     * its printer list. The dialog which pickled this printer can be gone,
+     * for example because an earlier resurrection already took it over or
+     * because the backend got restarted. Then register ourselves with the
+     * backend by fetching its printer list again.
+     */
+    print_backend_call_is_accepting_jobs_sync(p->backend_proxy, p->id,
+                                              &accepting_jobs, NULL, &error);
+    if (error)
+    {
+        logdebug("Printer %s %s unknown to backend (%s), fetching printer list\n",
+                 p->id, p->backend_name, error->message);
+        g_clear_error(&error);
+        print_backend_call_get_all_printers_sync(p->backend_proxy,
+                                                 &num_printers, &printers,
+                                                 NULL, &error);
+        if (error)
+        {
+            logerror("Error resurrecting printer : Couldn't get printer list from %s : %s\n",
+                     p->backend_name, error->message);
+            g_clear_error(&error);
+            goto failed;
+        }
+        g_variant_unref(printers);
+    }
+
     loginfo("Resurrected printer %s %s from %s\n", 
             p->id, p->backend_name, filename);
 
